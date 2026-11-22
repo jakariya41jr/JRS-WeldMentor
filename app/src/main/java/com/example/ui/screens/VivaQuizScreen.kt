@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Style
+import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Button
@@ -64,6 +65,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.audio.rememberVoiceAssistantController
 import com.example.data.content.VivaKnowledgeBase
 import com.example.data.model.QuizQuestion
@@ -92,13 +94,17 @@ fun VivaQuizScreen(
     onNextDelegateQuestion: (Int) -> Unit,
     onShuffleDelegateQuestions: (Int) -> Unit,
     onResetDelegateFeedback: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    ttsServiceOverride: com.example.audio.WeldingTtsService? = null
 ) {
     val palette = WeldTheme.colors
     val prefs = uiState.preferences
     val lang = prefs.language
     val metrics = uiState.metrics
     val voice = rememberVoiceAssistantController(lang, prefs.speechSpeedPreset)
+    val quizTts = ttsServiceOverride ?: voice.ttsService
+    val ttsState by quizTts.playbackState.collectAsStateWithLifecycle()
+
     val subMode = selectedSubMode
     var selectedTopicEn by remember { mutableStateOf("ALL") }
     var quizShuffleSeed by remember { mutableIntStateOf(Random.nextInt()) }
@@ -106,6 +112,8 @@ fun VivaQuizScreen(
     var selectedOption by remember { mutableStateOf<Int?>(null) }
 
     var delegateAnswerInput by remember { mutableStateOf("") }
+    var autoReadQuiz by remember { mutableStateOf(prefs.autoSpeakAi) }
+    var readOptionsAloud by remember { mutableStateOf(false) }
     var autoSpeakDelegate by remember { mutableStateOf(prefs.autoSpeakAi) }
     var vivaHandsFreeLive by remember { mutableStateOf(false) }
     val bargeInEnabled = prefs.bargeInEnabled
@@ -115,9 +123,9 @@ fun VivaQuizScreen(
         onDispose {
             if (subMode != 1) {
                 vivaHandsFreeLive = false
-                voice.stopListening()
-                voice.stopSpeaking()
             }
+            voice.stopListening()
+            quizTts.stop()
         }
     }
 
@@ -140,6 +148,26 @@ fun VivaQuizScreen(
     }
     val safeItem = shuffledDeck[currentQuestionIdx % shuffledDeck.size]
     val safeQuestion = safeItem.source
+
+    LaunchedEffect(
+        safeQuestion.id,
+        currentQuestionIdx,
+        quizShuffleSeed,
+        subMode,
+        autoReadQuiz,
+        readOptionsAloud,
+        ttsState.isReady,
+        lang
+    ) {
+        if (subMode == 0 && autoReadQuiz && ttsState.isReady && selectedOption == null) {
+            quizTts.speakQuizQuestion(
+                item = safeItem,
+                questionNumber = (currentQuestionIdx % shuffledDeck.size) + 1,
+                totalQuestions = shuffledDeck.size,
+                includeOptions = readOptionsAloud
+            )
+        }
+    }
 
     var cardIdx by remember { mutableIntStateOf(0) }
     var isCardFlipped by remember { mutableStateOf(false) }
@@ -208,6 +236,7 @@ fun VivaQuizScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             TextButton(
                                 onClick = {
+                                    quizTts.stop()
                                     quizShuffleSeed = Random.nextInt()
                                     currentQuestionIdx = 0
                                     selectedOption = null
@@ -255,6 +284,7 @@ fun VivaQuizScreen(
                         FilterChip(
                             selected = selectedTopicEn == "ALL",
                             onClick = {
+                                quizTts.stop()
                                 selectedTopicEn = "ALL"
                                 quizShuffleSeed = Random.nextInt()
                                 currentQuestionIdx = 0
@@ -268,6 +298,7 @@ fun VivaQuizScreen(
                             FilterChip(
                                 selected = selectedTopicEn == "WEAK",
                                 onClick = {
+                                    quizTts.stop()
                                     selectedTopicEn = "WEAK"
                                     quizShuffleSeed = Random.nextInt()
                                     currentQuestionIdx = 0
@@ -285,6 +316,7 @@ fun VivaQuizScreen(
                         FilterChip(
                             selected = selectedTopicEn == topic.en,
                             onClick = {
+                                quizTts.stop()
                                 selectedTopicEn = topic.en
                                 quizShuffleSeed = Random.nextInt()
                                 currentQuestionIdx = 0
@@ -312,17 +344,99 @@ fun VivaQuizScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
                             ArcStatusPill(text = safeQuestion.topic.get(lang), color = palette.arcCyan)
                             ArcStatusPill(text = AppStrings.shuffledSetBadge.get(lang), color = palette.violetSpark)
                         }
-                        Text(
-                            text = "${(currentQuestionIdx % shuffledDeck.size) + 1} / ${shuffledDeck.size}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = palette.textSecondary
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "${(currentQuestionIdx % shuffledDeck.size) + 1} / ${shuffledDeck.size}",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = palette.textSecondary
+                            )
+                            val isReadingThisQuestion = ttsState.isSpeaking && ttsState.activeItemId == "quiz_${safeQuestion.id}"
+                            IconButton(
+                                onClick = {
+                                    if (isReadingThisQuestion || ttsState.isSpeaking) {
+                                        quizTts.stop()
+                                    } else {
+                                        quizTts.speakQuizQuestion(
+                                            item = safeItem,
+                                            questionNumber = (currentQuestionIdx % shuffledDeck.size) + 1,
+                                            totalQuestions = shuffledDeck.size,
+                                            includeOptions = readOptionsAloud
+                                        )
+                                    }
+                                },
+                                modifier = Modifier.testTag("quiz_speak_question_btn")
+                            ) {
+                                Icon(
+                                    imageVector = if (isReadingThisQuestion) Icons.Filled.Stop else Icons.Filled.VolumeUp,
+                                    contentDescription = if (isReadingThisQuestion) AppStrings.voiceStopSpeaking.get(lang) else AppStrings.voiceTapListen.get(lang),
+                                    tint = palette.arcCyan
+                                )
+                            }
+                        }
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        FilterChip(
+                            selected = autoReadQuiz,
+                            onClick = {
+                                val next = !autoReadQuiz
+                                autoReadQuiz = next
+                                if (!next) {
+                                    quizTts.stop()
+                                }
+                            },
+                            label = { Text(AppStrings.quizAutoReadToggle.get(lang)) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = if (autoReadQuiz) Icons.Filled.VolumeUp else Icons.Filled.VolumeOff,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = palette.arcCyan.copy(alpha = 0.2f),
+                                selectedLabelColor = palette.arcCyan
+                            ),
+                            modifier = Modifier.testTag("quiz_auto_read_chip")
+                        )
+                        FilterChip(
+                            selected = readOptionsAloud,
+                            onClick = { readOptionsAloud = !readOptionsAloud },
+                            label = { Text(AppStrings.quizReadOptionsToggle.get(lang)) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = palette.violetSpark.copy(alpha = 0.2f),
+                                selectedLabelColor = palette.violetSpark
+                            ),
+                            modifier = Modifier.testTag("quiz_read_options_chip")
+                        )
+                        if (ttsState.isSpeaking || !ttsState.isReady) {
+                            val statusColor = if (ttsState.isSpeaking) palette.passEmerald else palette.moltenAmber
+                            val statusText = when {
+                                ttsState.isSpeaking -> AppStrings.quizTtsSpeaking.get(lang)
+                                ttsState.errorMessage != null -> ttsState.errorMessage!!
+                                else -> AppStrings.quizTtsReady.get(lang)
+                            }
+                            ArcStatusPill(
+                                text = statusText,
+                                color = statusColor,
+                                icon = if (ttsState.isSpeaking) Icons.Filled.GraphicEq else Icons.Filled.VolumeUp,
+                                modifier = Modifier.testTag("quiz_tts_status_pill")
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = safeQuestion.question.get(lang),
                         style = MaterialTheme.typography.titleMedium,
@@ -352,12 +466,17 @@ fun VivaQuizScreen(
                             onClick = {
                                 if (selectedOption == null) {
                                     selectedOption = idx
+                                    val isRight = idx == safeItem.correctShuffledIndex
                                     onRecordAttempt(
                                         safeQuestion.id,
                                         safeQuestion.topic.en,
                                         safeQuestion.topic.bn,
-                                        idx == safeItem.correctShuffledIndex
+                                        isRight
                                     )
+                                    quizTts.stop()
+                                    if (autoReadQuiz && ttsState.isReady) {
+                                        quizTts.speakQuizExplanation(safeItem, isRight)
+                                    }
                                 }
                             },
                             modifier = Modifier
@@ -392,6 +511,7 @@ fun VivaQuizScreen(
                     }
 
                     AnimatedVisibility(visible = selectedOption != null) {
+                        val isReadingExplanation = ttsState.isSpeaking && ttsState.activeItemId == "exp_${safeQuestion.id}"
                         Column(modifier = Modifier.padding(top = 12.dp)) {
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
@@ -400,11 +520,36 @@ fun VivaQuizScreen(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
-                                    Text(
-                                        text = AppStrings.explanationHeader.get(lang),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = palette.arcCyan
-                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = AppStrings.explanationHeader.get(lang),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = palette.arcCyan
+                                        )
+                                        IconButton(
+                                            onClick = {
+                                                if (isReadingExplanation) {
+                                                    quizTts.stop()
+                                                } else {
+                                                    quizTts.speakQuizExplanation(
+                                                        item = safeItem,
+                                                        isCorrect = selectedOption == safeItem.correctShuffledIndex
+                                                    )
+                                                }
+                                            },
+                                            modifier = Modifier.testTag("quiz_speak_explanation_btn")
+                                        ) {
+                                            Icon(
+                                                imageVector = if (isReadingExplanation) Icons.Filled.Stop else Icons.Filled.VolumeUp,
+                                                contentDescription = AppStrings.quizReadExplanationBtn.get(lang),
+                                                tint = palette.arcCyan
+                                            )
+                                        }
+                                    }
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
                                         text = safeQuestion.explanation.get(lang),
@@ -416,6 +561,7 @@ fun VivaQuizScreen(
                             Spacer(modifier = Modifier.height(12.dp))
                             Button(
                                 onClick = {
+                                    quizTts.stop()
                                     val nextPos = currentQuestionIdx + 1
                                     if (nextPos >= shuffledDeck.size) {
                                         quizShuffleSeed = Random.nextInt()

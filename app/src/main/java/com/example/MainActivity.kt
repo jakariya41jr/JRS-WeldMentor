@@ -30,10 +30,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Quiz
@@ -74,16 +72,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.local.AppThemeMode
-import com.example.data.local.WeldJobEntity
 import com.example.i18n.AppStrings
 import com.example.ui.screens.AiMentorScreen
 import com.example.ui.screens.CurrencyConverterScreen
 import com.example.ui.screens.GuidesScreen
-import com.example.ui.screens.HomeScreen
-import com.example.ui.screens.LogbookFormSheet
-import com.example.ui.screens.LogbookScreen
 import com.example.ui.screens.SettingsSheet
-import com.example.ui.screens.SummaryShareDialog
 import com.example.ui.screens.VivaQuizScreen
 import com.example.ui.theme.JrsWeldMentorTheme
 import com.example.ui.theme.WeldGlassBackground
@@ -91,12 +84,10 @@ import com.example.ui.theme.WeldTheme
 import com.example.ui.viewmodel.WeldMentorViewModel
 
 private enum class MainTab(val tag: String, val icon: ImageVector) {
-    HOME("nav_home", Icons.Filled.Home),
-    LOGBOOK("nav_logbook", Icons.Filled.Build),
+    MENTOR("nav_mentor", Icons.Filled.AutoAwesome),
     VIVA("nav_viva", Icons.Filled.Quiz),
     GUIDES("nav_guides", Icons.Filled.MenuBook),
-    CURRENCY("nav_currency", Icons.Filled.CurrencyExchange),
-    MENTOR("nav_mentor", Icons.Filled.AutoAwesome)
+    CURRENCY("nav_currency", Icons.Filled.CurrencyExchange)
 }
 
 class MainActivity : ComponentActivity() {
@@ -141,13 +132,10 @@ fun WeldMentorAppRoot(
     JrsWeldMentorTheme(themeMode = themeMode) {
         val palette = WeldTheme.colors
 
-        var currentTab by remember { mutableStateOf(MainTab.HOME) }
-        var guidesSubTab by remember { mutableIntStateOf(0) }
+        var currentTab by remember { mutableStateOf(MainTab.MENTOR) }
+        var guidesSubTab by remember { mutableIntStateOf(4) }
         var vivaSubMode by remember { mutableIntStateOf(0) }
-        var editingJob by remember { mutableStateOf<WeldJobEntity?>(null) }
-        var showLogForm by remember { mutableStateOf(false) }
         var showSettings by remember { mutableStateOf(false) }
-        var showSummaryCard by remember { mutableStateOf(false) }
 
         val snackbarHostState = remember { SnackbarHostState() }
 
@@ -265,40 +253,30 @@ fun WeldMentorAppRoot(
                                     .widthIn(max = 760.dp)
                             ) { activeTab ->
                                 when (activeTab) {
-                                    MainTab.HOME -> HomeScreen(
+                                    MainTab.MENTOR -> AiMentorScreen(
                                         uiState = uiState,
-                                        onOpenNewLog = {
-                                            editingJob = null
-                                            showLogForm = true
+                                        onSendMessage = { viewModel.sendAiMessage(it) },
+                                        onClearChat = { viewModel.clearAiChat() },
+                                        onToggleAutoSpeak = { enabled ->
+                                            viewModel.setVoiceSettings(autoSpeakAi = enabled)
                                         },
-                                        onOpenSummaryCard = { showSummaryCard = true },
-                                        onOpenPlanners = {
-                                            guidesSubTab = 3
-                                            currentTab = MainTab.GUIDES
+                                        onSubmitDelegateAnswer = { q, ans ->
+                                            viewModel.submitDelegateAnswer(q, ans)
                                         },
-                                        onOpenCurrency = { currentTab = MainTab.CURRENCY },
-                                        onOpenVivaDelegator = {
-                                            vivaSubMode = 1
+                                        onNextDelegateQuestion = { total ->
+                                            viewModel.nextDelegateQuestion(total)
+                                        },
+                                        onShuffleDelegateQuestions = { total ->
+                                            viewModel.shuffleDelegateQuestions(total)
+                                        },
+                                        onResetDelegateFeedback = {
+                                            viewModel.resetDelegateFeedback()
+                                        },
+                                        onOpenVivaCards = {
+                                            vivaSubMode = 2
                                             currentTab = MainTab.VIVA
                                         },
-                                        onAddPracticeMinutes = { viewModel.addPracticeMinutes(it) },
-                                        onAddTask = { en, bn, cat -> viewModel.addDailyTask(en, bn, cat) },
-                                        onToggleTask = { id, done -> viewModel.toggleDailyTask(id, done) },
-                                        onDeleteTask = { id -> viewModel.deleteDailyTask(id) }
-                                    )
-
-                                    MainTab.LOGBOOK -> LogbookScreen(
-                                        uiState = uiState,
-                                        onUpdateFilter = { viewModel.updateLogFilter(it) },
-                                        onOpenNewForm = {
-                                            editingJob = null
-                                            showLogForm = true
-                                        },
-                                        onEditJob = { job ->
-                                            editingJob = job
-                                            showLogForm = true
-                                        },
-                                        onDeleteJob = { id -> viewModel.deleteJob(id) }
+                                        onOpenSettings = { showSettings = true }
                                     )
 
                                     MainTab.VIVA -> VivaQuizScreen(
@@ -342,50 +320,12 @@ fun WeldMentorAppRoot(
                                             viewModel.setCustomRate(from, to, rate)
                                         }
                                     )
-
-                                    MainTab.MENTOR -> AiMentorScreen(
-                                        uiState = uiState,
-                                        onSendMessage = { viewModel.sendAiMessage(it) },
-                                        onClearChat = { viewModel.clearAiChat() },
-                                        onToggleAutoSpeak = { enabled ->
-                                            viewModel.setVoiceSettings(autoSpeakAi = enabled)
-                                        },
-                                        onSubmitDelegateAnswer = { q, ans ->
-                                            viewModel.submitDelegateAnswer(q, ans)
-                                        },
-                                        onNextDelegateQuestion = { total ->
-                                            viewModel.nextDelegateQuestion(total)
-                                        },
-                                        onShuffleDelegateQuestions = { total ->
-                                            viewModel.shuffleDelegateQuestions(total)
-                                        },
-                                        onResetDelegateFeedback = {
-                                            viewModel.resetDelegateFeedback()
-                                        },
-                                        onOpenVivaCards = {
-                                            vivaSubMode = 2
-                                            currentTab = MainTab.VIVA
-                                        },
-                                        onOpenSettings = { showSettings = true }
-                                    )
                                 }
                             }
                         }
                     }
                 }
             }
-        }
-
-        if (showLogForm) {
-            LogbookFormSheet(
-                existingJob = editingJob,
-                lang = lang,
-                onDismiss = { showLogForm = false },
-                onSave = { job ->
-                    viewModel.saveJob(job)
-                    showLogForm = false
-                }
-            )
         }
 
         if (showSettings) {
@@ -399,18 +339,9 @@ fun WeldMentorAppRoot(
                 onSaveGeminiConfig = { key -> viewModel.saveGeminiConfig(key) },
                 onSaveProfile = { name, trade -> viewModel.saveProfile(name, trade) },
                 onExportJson = { viewModel.buildJsonBackup() },
-                onExportCsv = { viewModel.buildCsvBackup() },
                 onImportContent = { viewModel.importBackup(it) },
                 onShowMessage = { viewModel.showStatusMessage(it) },
                 onDismiss = { showSettings = false }
-            )
-        }
-
-        if (showSummaryCard) {
-            SummaryShareDialog(
-                uiState = uiState,
-                onShowMessage = { viewModel.showStatusMessage(it) },
-                onDismiss = { showSummaryCard = false }
             )
         }
     }
@@ -519,10 +450,8 @@ private fun BrandGlassTopBar(
 }
 
 private fun tabLabel(tab: MainTab, lang: com.example.i18n.AppLanguage): String = when (tab) {
-    MainTab.HOME -> AppStrings.navHome.get(lang)
-    MainTab.LOGBOOK -> AppStrings.navLogbook.get(lang)
+    MainTab.MENTOR -> AppStrings.navMentor.get(lang)
     MainTab.VIVA -> AppStrings.navViva.get(lang)
     MainTab.GUIDES -> AppStrings.navGuides.get(lang)
     MainTab.CURRENCY -> AppStrings.navCurrency.get(lang)
-    MainTab.MENTOR -> AppStrings.navMentor.get(lang)
 }

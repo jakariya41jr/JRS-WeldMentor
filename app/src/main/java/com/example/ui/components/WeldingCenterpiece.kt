@@ -2,24 +2,12 @@ package com.example.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -28,26 +16,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.GraphicEq
-import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.minimumInteractiveComponentSize
-import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -56,31 +38,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.R
 import com.example.i18n.AppLanguage
 import com.example.i18n.AppStrings
 import com.example.ui.theme.GlassCard
 import com.example.ui.theme.WeldTheme
+import kotlinx.coroutines.isActive
 import kotlin.math.PI
 import kotlin.math.abs
-import kotlin.math.cos
 import kotlin.math.sin
-
-enum class CenterpiecePhase {
-    IDLE,
-    LISTENING,
-    THINKING,
-    SPEAKING
-}
 
 @Composable
 fun WeldEnergyOrbCenterpiece(
@@ -126,67 +96,24 @@ fun WeldEnergyOrbCenterpiece(
         CenterpiecePhase.SPEAKING -> AppStrings.orbSpeaking.get(lang)
     }
 
-    val transition = rememberInfiniteTransition(label = "weldEnergyOrb")
-    val wavePhase by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = (2f * PI).toFloat(),
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = when (phase) {
-                    CenterpiecePhase.IDLE -> 3200
-                    CenterpiecePhase.THINKING -> 1300
-                    else -> 1100
-                },
-                easing = LinearEasing
-            ),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "wavePhase"
-    )
-    val orbitDeg by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = if (phase == CenterpiecePhase.THINKING) 1700 else 6800,
-                easing = LinearEasing
-            ),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "orbitDeg"
-    )
-    val breatheScale by transition.animateFloat(
-        initialValue = 0.94f,
-        targetValue = when (phase) {
-            CenterpiecePhase.IDLE -> 1.03f
-            CenterpiecePhase.LISTENING -> 1.10f
-            CenterpiecePhase.THINKING -> 1.05f
-            CenterpiecePhase.SPEAKING -> 1.11f
-        },
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = if (phase == CenterpiecePhase.IDLE) 2000 else 850,
-                easing = FastOutSlowInEasing
-            ),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "breatheScale"
-    )
-    val rippleProgress by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1900, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "rippleProgress"
-    )
-
-    val activeScale by animateFloatAsState(
-        targetValue = if (phase == CenterpiecePhase.IDLE) 1f else 1.03f,
-        animationSpec = spring(dampingRatio = 0.65f, stiffness = 260f),
-        label = "activeScale"
-    )
+    val wavePhaseAnim = remember { Animatable(0f) }
+    LaunchedEffect(phase) {
+        val cycleMs = when (phase) {
+            CenterpiecePhase.IDLE -> 3200
+            CenterpiecePhase.THINKING -> 1300
+            CenterpiecePhase.LISTENING -> 1050
+            CenterpiecePhase.SPEAKING -> 950
+        }
+        val twoPi = (2.0 * PI).toFloat()
+        while (isActive) {
+            val start = wavePhaseAnim.value % twoPi
+            wavePhaseAnim.snapTo(start)
+            wavePhaseAnim.animateTo(
+                targetValue = start + twoPi,
+                animationSpec = tween(durationMillis = cycleMs, easing = LinearEasing)
+            )
+        }
+    }
 
     if (compact) {
         CompactEnergyOrbBanner(
@@ -197,9 +124,7 @@ fun WeldEnergyOrbCenterpiece(
             statusText = statusText,
             accentColor = accentColor,
             rimColor = rimColor,
-            wavePhase = wavePhase,
-            orbitDeg = orbitDeg,
-            breatheScale = breatheScale,
+            wavePhase = wavePhaseAnim.value,
             lang = lang,
             onOrbClick = onOrbClick,
             modifier = modifier
@@ -218,7 +143,6 @@ fun WeldEnergyOrbCenterpiece(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Top bar inside card: title + model/mode pill
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -252,132 +176,18 @@ fun WeldEnergyOrbCenterpiece(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Prominent Central Energy Orb
-            val orbInteraction = remember { MutableInteractionSource() }
-            Box(
-                modifier = Modifier
-                    .size(152.dp)
-                    .scale(activeScale)
-                    .clip(CircleShape)
-                    .then(
-                        if (onOrbClick != null) {
-                            Modifier
-                                .minimumInteractiveComponentSize()
-                                .clickable(
-                                    interactionSource = orbInteraction,
-                                    indication = ripple(bounded = true, color = accentColor),
-                                    role = Role.Button,
-                                    onClick = onOrbClick
-                                )
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .testTag("mentor_central_orb"),
-                contentAlignment = Alignment.Center
-            ) {
-                Canvas(modifier = Modifier.matchParentSize()) {
-                    val maxRadius = size.minDimension / 2f
-
-                    // Expanding energy ripples during active speech/listen
-                    if (phase == CenterpiecePhase.LISTENING || phase == CenterpiecePhase.SPEAKING) {
-                        for (ring in 0..1) {
-                            val t = (rippleProgress + ring * 0.5f) % 1f
-                            val ringRadius = maxRadius * (0.55f + 0.43f * t)
-                            drawCircle(
-                                color = accentColor.copy(alpha = (1f - t) * 0.38f),
-                                radius = ringRadius,
-                                style = Stroke(width = 2.dp.toPx())
-                            )
-                        }
-                    }
-
-                    // Soft radial aura
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                accentColor.copy(alpha = if (palette.isLight) 0.24f else 0.34f),
-                                rimColor.copy(alpha = if (palette.isLight) 0.12f else 0.16f),
-                                Color.Transparent
-                            ),
-                            center = center,
-                            radius = maxRadius * breatheScale.coerceAtMost(1.0f)
-                        ),
-                        radius = maxRadius
-                    )
-
-                    // Outer swirling orbital arc
-                    rotate(degrees = orbitDeg, pivot = center) {
-                        val inset = 12.dp.toPx()
-                        drawArc(
-                            brush = Brush.sweepGradient(
-                                listOf(accentColor, rimColor, Color.Transparent, accentColor)
-                            ),
-                            startAngle = 0f,
-                            sweepAngle = 265f,
-                            useCenter = false,
-                            topLeft = Offset(inset, inset),
-                            size = Size(size.width - inset * 2, size.height - inset * 2),
-                            style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
-                        )
-                    }
-
-                    // Counter-rotating plasma filament + orbiting spark dot
-                    rotate(degrees = -orbitDeg * 1.45f, pivot = center) {
-                        val inset = 22.dp.toPx()
-                        drawArc(
-                            color = rimColor.copy(alpha = 0.72f),
-                            startAngle = 25f,
-                            sweepAngle = 125f,
-                            useCenter = false,
-                            topLeft = Offset(inset, inset),
-                            size = Size(size.width - inset * 2, size.height - inset * 2),
-                            style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
-                        )
-                        val dotAngle = Math.toRadians(25.0)
-                        val dotR = (size.minDimension / 2f) - inset
-                        drawCircle(
-                            color = accentColor,
-                            radius = 3.5.dp.toPx(),
-                            center = Offset(
-                                center.x + (dotR * cos(dotAngle)).toFloat(),
-                                center.y + (dotR * sin(dotAngle)).toFloat()
-                            )
-                        )
-                    }
-                }
-
-                // Luminous Core Emblem
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .scale(breatheScale)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(
-                                    accentColor.copy(alpha = 0.28f),
-                                    palette.surface
-                                )
-                            )
-                        )
-                        .border(2.dp, accentColor.copy(alpha = 0.85f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_weldmentor_symbol),
-                        contentDescription = statusText,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(72.dp)
-                            .clip(CircleShape)
-                    )
-                }
-            }
+            EnergyOrb(
+                state = phase,
+                accentColor = accentColor,
+                rimColor = rimColor,
+                contentDescription = statusText,
+                orbSize = 156.dp,
+                coreSize = 82.dp,
+                onClick = onOrbClick
+            )
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            // Prominent Status Text (TAP TO START / LISTENING... / THINKING... / SPEAKING...)
             Text(
                 text = statusText,
                 style = MaterialTheme.typography.titleMedium,
@@ -387,7 +197,6 @@ fun WeldEnergyOrbCenterpiece(
                 modifier = Modifier.testTag("orb_status_text")
             )
 
-            // Interactive Interrupt / Tap Cue when SPEAKING or LISTENING
             AnimatedVisibility(visible = phase == CenterpiecePhase.SPEAKING && onOrbClick != null) {
                 Surface(
                     onClick = { onOrbClick?.invoke() },
@@ -467,7 +276,7 @@ fun WeldEnergyOrbCenterpiece(
                 phase = phase,
                 accentColor = accentColor,
                 rimColor = rimColor,
-                wavePhase = wavePhase,
+                wavePhase = wavePhaseAnim.value,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(24.dp)
@@ -486,8 +295,6 @@ private fun CompactEnergyOrbBanner(
     accentColor: Color,
     rimColor: Color,
     wavePhase: Float,
-    orbitDeg: Float,
-    breatheScale: Float,
     lang: AppLanguage,
     onOrbClick: (() -> Unit)?,
     modifier: Modifier = Modifier
@@ -504,62 +311,15 @@ private fun CompactEnergyOrbBanner(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(70.dp)
-                    .clip(CircleShape)
-                    .then(
-                        if (onOrbClick != null) {
-                            Modifier
-                                .minimumInteractiveComponentSize()
-                                .clickable(onClick = onOrbClick)
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .testTag("mentor_central_orb"),
-                contentAlignment = Alignment.Center
-            ) {
-                Canvas(modifier = Modifier.matchParentSize()) {
-                    val radius = size.minDimension / 2f
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(accentColor.copy(alpha = 0.34f * breatheScale), Color.Transparent),
-                            center = center,
-                            radius = radius
-                        )
-                    )
-                    rotate(degrees = orbitDeg, pivot = center) {
-                        drawArc(
-                            brush = Brush.sweepGradient(listOf(accentColor, rimColor, Color.Transparent, accentColor)),
-                            startAngle = 0f,
-                            sweepAngle = 250f,
-                            useCenter = false,
-                            topLeft = Offset(3.dp.toPx(), 3.dp.toPx()),
-                            size = Size(size.width - 6.dp.toPx(), size.height - 6.dp.toPx()),
-                            style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round)
-                        )
-                    }
-                }
-
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(palette.surface)
-                        .border(1.5.dp, accentColor.copy(alpha = 0.78f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_weldmentor_symbol),
-                        contentDescription = title,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                    )
-                }
-            }
+            EnergyOrb(
+                state = phase,
+                accentColor = accentColor,
+                rimColor = rimColor,
+                contentDescription = title,
+                orbSize = 70.dp,
+                coreSize = 46.dp,
+                onClick = onOrbClick
+            )
 
             Spacer(modifier = Modifier.width(12.dp))
 

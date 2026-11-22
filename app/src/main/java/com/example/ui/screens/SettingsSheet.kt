@@ -98,7 +98,6 @@ fun SettingsSheet(
     onSaveGeminiConfig: (String) -> Unit,
     onSaveProfile: (String, String) -> Unit,
     onExportJson: suspend () -> String,
-    onExportCsv: suspend () -> String,
     onImportContent: (String) -> Unit,
     onShowMessage: (String) -> Unit,
     onDismiss: () -> Unit
@@ -141,19 +140,7 @@ fun SettingsSheet(
             scope.launch {
                 val json = onExportJson()
                 context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) }
-                onShowMessage("JSON backup saved.")
-            }
-        }
-    }
-
-    val exportCsvLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("text/csv")
-    ) { uri ->
-        if (uri != null) {
-            scope.launch {
-                val csv = onExportCsv()
-                context.contentResolver.openOutputStream(uri)?.use { it.write(csv.toByteArray()) }
-                onShowMessage("CSV job log exported.")
+                onShowMessage("Study progress JSON backup saved.")
             }
         }
     }
@@ -542,7 +529,7 @@ fun SettingsSheet(
                 }
             }
 
-            // 5. Backup & Restore (JSON / CSV)
+            // 5. Study Progress Backup & Restore (JSON)
             GlassCard(modifier = Modifier.fillMaxWidth(), accentGlow = palette.arcCyan) {
                 GlassSectionHeader(
                     title = AppStrings.backupSection.get(lang),
@@ -552,36 +539,26 @@ fun SettingsSheet(
                 Spacer(modifier = Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     OutlinedButton(
-                        onClick = { exportJsonLauncher.launch("jrs_weldmentor_backup.json") },
+                        onClick = { exportJsonLauncher.launch("jrs_weldmentor_study_backup.json") },
                         modifier = Modifier.weight(1f).testTag("export_json_btn"),
                         border = BorderStroke(1.dp, palette.arcCyan.copy(alpha = 0.5f))
                     ) {
                         Icon(Icons.Filled.Download, contentDescription = null, tint = palette.arcCyan, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(AppStrings.exportJsonBtn.get(lang), style = MaterialTheme.typography.labelMedium, color = palette.arcCyan)
                     }
-                    OutlinedButton(
-                        onClick = { exportCsvLauncher.launch("jrs_weldmentor_logs.csv") },
-                        modifier = Modifier.weight(1f).testTag("export_csv_btn"),
-                        border = BorderStroke(1.dp, palette.passEmerald.copy(alpha = 0.5f))
+                    Button(
+                        onClick = { importLauncher.launch(arrayOf("application/json", "*/*")) },
+                        modifier = Modifier.weight(1f).testTag("import_backup_btn"),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
                     ) {
-                        Icon(Icons.Filled.Download, contentDescription = null, tint = palette.passEmerald, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(AppStrings.exportCsvBtn.get(lang), style = MaterialTheme.typography.labelMedium, color = palette.passEmerald)
+                        Icon(Icons.Filled.UploadFile, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(AppStrings.importBackupBtn.get(lang), style = MaterialTheme.typography.labelMedium)
                     }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(
-                    onClick = { importLauncher.launch(arrayOf("application/json", "text/csv", "text/comma-separated-values", "*/*")) },
-                    modifier = Modifier.fillMaxWidth().testTag("import_backup_btn"),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
-                ) {
-                    Icon(Icons.Filled.UploadFile, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(AppStrings.importBackupBtn.get(lang))
                 }
             }
 

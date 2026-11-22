@@ -4,16 +4,10 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.media.AudioAttributes
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
-import android.speech.tts.TextToSpeech
-import android.speech.tts.UtteranceProgressListener
-import android.speech.tts.Voice
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -29,22 +23,20 @@ import androidx.core.content.ContextCompat
 import com.example.data.local.SpeechSpeedPreset
 import com.example.i18n.AppLanguage
 import com.example.i18n.AppStrings
-import java.util.Locale
 
 @Stable
 class VoiceAssistantController(
     private val context: Context,
-    private val requestAudioPermission: () -> Unit
+    private val requestAudioPermission: () -> Unit,
+    val ttsService: WeldingTtsService = AndroidWeldingTtsService(context)
 ) {
-    private val mainHandler = Handler(Looper.getMainLooper())
-
     var isListening by mutableStateOf(false)
         private set
 
-    var isSpeaking by mutableStateOf(false)
+    var isSpeaking by mutableStateOf(ttsService.playbackState.value.isSpeaking)
         private set
 
-    var ttsReady by mutableStateOf(false)
+    var ttsReady by mutableStateOf(ttsService.playbackState.value.isReady)
         private set
 
     var voiceError by mutableStateOf<String?>(null)
@@ -60,10 +52,6 @@ class VoiceAssistantController(
     private var currentSpeedPreset: SpeechSpeedPreset = SpeechSpeedPreset.NATURAL
     private var pendingSpeechRequest: PendingSpeechRequest? = null
     private var speechRecognizer: SpeechRecognizer? = null
-    private var tts: TextToSpeech? = null
-    private var activeFinalUtteranceId: String? = null
-    private var activeOnSpeakComplete: (() -> Unit)? = null
-    private var speechGeneration: Long = 0L
     private var listenGeneration: Long = 0L
 
     private data class PendingSpeechRequest(
@@ -72,184 +60,35 @@ class VoiceAssistantController(
         val onResult: (String) -> Unit
     )
 
-    init {
-        initTts()
+    internal fun syncTtsPlaybackState(state: TtsPlaybackState) {
+        ttsReady = state.isReady
+        isSpeaking = state.isSpeaking
     }
 
     fun refreshPermissionState() {
         hasAudioPermission = checkAudioPermission(context)
     }
 
-    private fun initTts() {
-        try {
-            tts = TextToSpeech(context.applicationContext) { status ->
-                mainHandler.post {
-                    if (status == TextToSpeech.SUCCESS) {
-                        ttsReady = true
-                        try {
-                            tts?.setAudioAttributes(
-                                AudioAttributes.Builder()
-                                    .setUsage(AudioAttributes.USAGE_ASSISTANT)
-                                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                                    .build()
-                            )
-                        } catch (_: Exception) {
-                        }
-                        applyNaturalTtsVoice(currentLanguage, currentSpeedPreset)
-                        tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                            override fun onStart(utteranceId: String?) {
-                                mainHandler.post {
-                                    if (utteranceId?.startsWith("weld_${speechGeneration}_") == true) {
-                                        isSpeaking = true
-                                    }
-                                }
-                            }
-
-                            override fun onDone(utteranceId: String?) {
-                                mainHandler.post {
-                                    if (utteranceId == null || utteranceId == activeFinalUtteranceId) {
-                                        isSpeaking = false
-                                        val cb = activeOnSpeakComplete
-                                        activeOnSpeakComplete = null
-                                        activeFinalUtteranceId = null
-                                        cb?.invoke()
-                                    }
-                                }
-                            }
-
-                            @Deprecated("Deprecated in Java")
-                            override fun onError(utteranceId: String?) {
-                                mainHandler.post {
-                                    if (utteranceId == null || utteranceId.startsWith("weld_${speechGeneration}_")) {
-                                        isSpeaking = false
-                                        activeOnSpeakComplete = null
-                                        activeFinalUtteranceId = null
-                                    }
-                                }
-                            }
-
-                            override fun onError(utteranceId: String?, errorCode: Int) {
-                                mainHandler.post {
-                                    if (utteranceId == null || utteranceId.startsWith("weld_${speechGeneration}_")) {
-                                        isSpeaking = false
-                                        activeOnSpeakComplete = null
-                                        activeFinalUtteranceId = null
-                                    }
-                                }
-                            }
-                        })
-                    } else {
-                        ttsReady = false
-                    }
-                }
-            }
-        } catch (_: Exception) {
-            ttsReady = false
-        }
-    }
-
     fun updateSettings(language: AppLanguage, speedPreset: SpeechSpeedPreset = currentSpeedPreset) {
         currentLanguage = language
         currentSpeedPreset = speedPreset
-        if (ttsReady) {
-            applyNaturalTtsVoice(language, speedPreset)
-        }
+        ttsService.updateSettings(language, speedPreset)
+        syncTtsPlaybackState(ttsService.playbackState.value)
     }
 
     fun updateLanguage(language: AppLanguage) {
         updateSettings(language, currentSpeedPreset)
     }
 
-    private fun applyNaturalTtsVoice(language: AppLanguage, speedPreset: SpeechSpeedPreset) {
-        val engine = tts ?: return
-        val primaryLocale = if (language == AppLanguage.BN) Locale("bn", "BD") else Locale.US
-        val secondaryLocale = if (language == AppLanguage.BN) Locale("bn", "IN") else Locale.UK
-
-        val bestVoice = selectBestNaturalVoice(engine, primaryLocale, secondaryLocale)
-        if (bestVoice != null) {
-            engine.voice = bestVoice
-        } else {
-            val res = engine.setLanguage(primaryLocale)
-            if (res == TextToSpeech.LANG_MISSING_DATA || res == TextToSpeech.LANG_NOT_SUPPORTED) {
-                val fallback = engine.setLanguage(secondaryLocale)
-                if (fallback == TextToSpeech.LANG_MISSING_DATA || fallback == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    engine.setLanguage(Locale.US)
-                }
-            }
-        }
-
-        // Smooth conversational cadence prevents chopped or syllable-by-syllable delivery
-        val rate = if (language == AppLanguage.BN) {
-            (speedPreset.rateMultiplier - 0.03f).coerceIn(0.82f, 1.15f)
-        } else {
-            speedPreset.rateMultiplier
-        }
-        engine.setSpeechRate(rate)
-        engine.setPitch(1.0f)
-    }
-
-    private fun selectBestNaturalVoice(
-        engine: TextToSpeech,
-        primaryLocale: Locale,
-        secondaryLocale: Locale
-    ): Voice? {
-        return try {
-            val voices = engine.voices ?: return null
-            val targetLang = primaryLocale.language
-            voices
-                .filter { v ->
-                    v.locale != null &&
-                        v.locale.language.equals(targetLang, ignoreCase = true) &&
-                        !v.features.contains(TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED)
-                }
-                .maxByOrNull { v ->
-                    var score = 0
-                    if (v.locale == primaryLocale) score += 200
-                    else if (v.locale == secondaryLocale) score += 130
-                    if (v.quality >= Voice.QUALITY_VERY_HIGH) score += 120
-                    else if (v.quality >= Voice.QUALITY_HIGH) score += 80
-                    else if (v.quality >= Voice.QUALITY_NORMAL) score += 30
-                    if (!v.isNetworkConnectionRequired) score += 20
-                    if (v.latency <= Voice.LATENCY_NORMAL) score += 15
-                    score
-                }
-        } catch (_: Exception) {
-            null
-        }
-    }
-
     fun speak(rawText: String, onComplete: (() -> Unit)? = null) {
-        val segments = prepareNaturalSpeechSegments(rawText, currentLanguage)
-        if (segments.isEmpty() || !ttsReady) {
-            onComplete?.invoke()
-            return
-        }
         voiceError = null
-        applyNaturalTtsVoice(currentLanguage, currentSpeedPreset)
-
-        speechGeneration += 1L
-        val gen = speechGeneration
-        val batchPrefix = "weld_${gen}"
-        activeOnSpeakComplete = onComplete
-        activeFinalUtteranceId = "${batchPrefix}_${segments.lastIndex}"
-        isSpeaking = true
-
-        segments.forEachIndexed { idx, clause ->
-            val mode = if (idx == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD
-            val uttId = "${batchPrefix}_$idx"
-            tts?.speak(clause, mode, null, uttId)
-        }
+        ttsService.speakText(rawText, itemId = null, onComplete = onComplete)
+        syncTtsPlaybackState(ttsService.playbackState.value)
     }
 
     fun stopSpeaking() {
-        speechGeneration += 1L
-        activeOnSpeakComplete = null
-        activeFinalUtteranceId = null
-        try {
-            tts?.stop()
-        } catch (_: Exception) {
-        }
-        isSpeaking = false
+        ttsService.stop()
+        syncTtsPlaybackState(ttsService.playbackState.value)
     }
 
     /**
@@ -443,23 +282,15 @@ class VoiceAssistantController(
     }
 
     fun release() {
-        speechGeneration += 1L
         listenGeneration += 1L
-        activeOnSpeakComplete = null
-        activeFinalUtteranceId = null
         try {
             speechRecognizer?.destroy()
         } catch (_: Exception) {
         }
         speechRecognizer = null
-        try {
-            tts?.stop()
-            tts?.shutdown()
-        } catch (_: Exception) {
-        }
-        tts = null
+        ttsService.release()
+        syncTtsPlaybackState(ttsService.playbackState.value)
         isListening = false
-        isSpeaking = false
     }
 
     companion object {
@@ -471,55 +302,7 @@ class VoiceAssistantController(
         }
 
         internal fun prepareNaturalSpeechSegments(rawText: String, language: AppLanguage): List<String> {
-            val orConnector = if (language == AppLanguage.BN) " বা " else " or "
-            val toConnector = if (language == AppLanguage.BN) " থেকে " else " to "
-            val litersPerMin = if (language == AppLanguage.BN) " লিটার প্রতি মিনিট" else " liters per minute"
-            val approxWord = if (language == AppLanguage.BN) "প্রায় " else "approximately "
-            val degreeWord = if (language == AppLanguage.BN) " ডিগ্রি" else " degrees"
-            val plusWord = if (language == AppLanguage.BN) " প্লাস" else " plus"
-
-            val cleaned = rawText
-                .replace(Regex("```[\\s\\S]*?```"), " ")
-                .replace(Regex("\\[(PASS|REVIEW)]", RegexOption.IGNORE_CASE), "")
-                .replace(Regex("(?:(?m)^|(?<=[.!?।]\\s))\\s*(?:[-*•]+|\\d+[.)])\\s+"), "")
-                .replace(Regex("[*_`#>|]"), " ")
-                .replace("~", approxWord)
-                .replace("°", degreeWord)
-                .replace("6G+", "6G$plusWord", ignoreCase = true)
-                .replace("L/min", litersPerMin, ignoreCase = true)
-                .replace("L/m", litersPerMin, ignoreCase = true)
-                .replace(Regex("(\\d+)\\s*[–-]\\s*(\\d+)"), "$1$toConnector$2")
-                .replace(Regex("([A-Za-z0-9]+)/([A-Za-z0-9]+)"), "$1$orConnector$2")
-                .replace("•", ", ")
-                .replace(Regex("\\r?\\n+"), ", ")
-                .replace(Regex("\\s{2,}"), " ")
-                .trim()
-
-            if (cleaned.isBlank()) return emptyList()
-
-            val rawSentences = cleaned
-                .split(Regex("(?<=[.!?।])\\s+"))
-                .map { it.trim().trimStart('.', ',', ';') }
-                .filter { it.isNotBlank() }
-
-            // Merge consecutive clauses up to ~360 characters to keep spoken flow cohesive and avoid robotic stops
-            val merged = mutableListOf<String>()
-            val current = StringBuilder()
-            for (sentence in rawSentences) {
-                if (current.isEmpty()) {
-                    current.append(sentence)
-                } else if (current.length + sentence.length + 1 <= 360) {
-                    current.append(' ').append(sentence)
-                } else {
-                    merged.add(current.toString())
-                    current.clear()
-                    current.append(sentence)
-                }
-            }
-            if (current.isNotEmpty()) {
-                merged.add(current.toString())
-            }
-            return merged
+            return QuizSpeechFormatter.prepareNaturalSpeechSegments(rawText, language)
         }
     }
 }
@@ -545,6 +328,12 @@ fun rememberVoiceAssistantController(
                 permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
             }
         ).also { controllerRef = it }
+    }
+
+    LaunchedEffect(controller) {
+        controller.ttsService.playbackState.collect { ttsState ->
+            controller.syncTtsPlaybackState(ttsState)
+        }
     }
 
     LaunchedEffect(language, speedPreset) {

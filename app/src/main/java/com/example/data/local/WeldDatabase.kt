@@ -7,17 +7,13 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [
-        WeldJobEntity::class,
-        DailyTaskEntity::class,
         QuizAttemptEntity::class,
         ChecklistProgressEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class WeldDatabase : RoomDatabase() {
-    abstract fun weldJobDao(): WeldJobDao
-    abstract fun dailyTaskDao(): DailyTaskDao
     abstract fun quizAttemptDao(): QuizAttemptDao
     abstract fun checklistDao(): ChecklistDao
 
@@ -31,7 +27,10 @@ abstract class WeldDatabase : RoomDatabase() {
                     context.applicationContext,
                     WeldDatabase::class.java,
                     "jrs_weldmentor_db"
-                ).build().also { INSTANCE = it }
+                )
+                    .fallbackToDestructiveMigration(dropAllTables = true)
+                    .build()
+                    .also { INSTANCE = it }
             }
         }
     }

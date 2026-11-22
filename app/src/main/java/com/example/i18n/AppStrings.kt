@@ -6,110 +6,52 @@ object AppStrings {
     val devWebsite = "Jakariya41jr.xyz"
     val devWebsiteUrl = "https://jakariya41jr.xyz"
 
-    // Navigation Tabs
-    val navHome = BiText("Home", "হোম")
-    val navLogbook = BiText("Logbook", "লগবুক")
-    val navViva = BiText("Viva", "ভাইভা")
-    val navGuides = BiText("Guides", "গাইড")
+    // Navigation Tabs (Streamlined Educational & AI Mentorship Hub)
     val navMentor = BiText("AI Mentor", "AI মেন্টর")
+    val navViva = BiText("Viva & Quiz", "ভাইভা ও কুইজ")
+    val navGuides = BiText("Guides", "গাইড")
+    val navCurrency = BiText("Currency", "মুদ্রা")
 
     // Top Header
     val builtBy = BiText("Developed by Md Jakariya Hasan | Jakariya41jr.xyz", "ডেভেলপার: মোঃ জাকারিয়া হাসান | Jakariya41jr.xyz")
     val offlineReady = BiText("Offline Ready", "অফলাইন প্রস্তুত")
     val onlineReady = BiText("Online", "অনলাইন")
 
-    // Home / Dashboard
-    val heroTitle = BiText("Master Every Weld & Trade Test", "প্রতিটি ওয়েল্ডিং ও ট্রেড টেস্টে দক্ষ হোন")
-    val heroSubtitle = BiText(
-        "Offline logbook, 1G–6G+ practice tracker, viva quiz & AI mentor",
-        "অফলাইন লগবুক, 1G–6G+ প্র্যাকটিস ট্র্যাকার, ভাইভা কুইজ ও AI মেন্টর"
-    )
-    val logNewWeld = BiText("Log New Weld", "নতুন ওয়েল্ড লগ")
-    val dailyGoalsHeader = BiText("Today's Practice & Learning Goals", "আজকের প্র্যাকটিস ও শেখার লক্ষ্য")
-    val addTask = BiText("Add Task", "টাস্ক যোগ")
-    val practiceMinutes = BiText("Practice Minutes", "প্র্যাকটিস মিনিট")
-    val add15Min = BiText("+15m", "+১৫মি")
-    val practicalJobsLabel = BiText("Practical Jobs", "প্র্যাকটিক্যাল জব")
-    val vivaReadinessLabel = BiText("Viva Readiness", "ভাইভা প্রস্তুতি")
-    val dailyStreakLabel = BiText("Daily Streak", "ধারাবাহিক দিন")
-    val passRateLabel = BiText("Pass Rate", "পাস হার")
-    val positionsMastered = BiText("Positions Practiced", "অনুশীলিত পজিশন")
-    val daysUnit = BiText("days", "দিন")
-    val quickToolsHeader = BiText("Trade Readiness Tools", "ট্রেড প্রস্তুতি টুলস")
-    val summaryCardTitle = BiText("Practice Summary Card", "প্র্যাকটিস সামারি কার্ড")
-    val summaryCardDesc = BiText("Print, copy or share your practice report", "প্র্যাকটিস রিপোর্ট প্রিন্ট, কপি বা শেয়ার করুন")
-    val stancePlannerTitle = BiText("Position & Stance Planner", "পজিশন ও স্ট্যান্স প্ল্যানার")
-    val stancePlannerDesc = BiText("4G & 6G+ posture & mirror", "4G ও 6G+ ভঙ্গি ও মিরর সেটআপ")
-    val tradeTestTitle = BiText("Trade Test & Overseas", "ট্রেড টেস্ট ও বিদেশ যাত্রা")
-    val tradeTestDesc = BiText("Coupon, PPE & interview check", "কুপন, PPE ও ইন্টারভিউ চেকলিস্ট")
-    val delegateHomeTitle = BiText("Viva Delegator Mode", "ভাইভা ডেলিগেটর মোড")
-    val delegateHomeDesc = BiText("Voice trade test interview & auto-progress", "কণ্ঠে ট্রেড টেস্ট ভাইভা ও অটো প্রোগ্রেস")
-
-    // Daily Task Dialog
-    val newTaskTitle = BiText("New Daily Task", "নতুন দৈনিক টাস্ক")
-    val taskTitleHint = BiText("e.g., Practice 6G Root Pass with ER70S-6", "যেমন: ER70S-6 দিয়ে 6G রুট পাস প্র্যাকটিস")
-    val taskCategoryLabel = BiText("Category", "ক্যাটাগরি")
-    val catPractical = BiText("Practical", "প্র্যাকটিক্যাল")
-    val catViva = BiText("Viva / Theory", "ভাইভা / থিওরি")
-    val catSafety = BiText("PPE / Prep", "PPE / প্রস্তুতি")
-
-    // Logbook
-    val logbookTitle = BiText("Smart Welding Job Logbook", "স্মার্ট ওয়েল্ডিং জব লগবুক")
-    val searchLogsHint = BiText("Search rod, position, feedback, tools...", "রড, পজিশন, ফিডব্যাক, টুলস খুঁজুন...")
+    // General Actions & Common
     val allFilter = BiText("All", "সব")
-    val noLogsTitle = BiText("No Welding Jobs Logged Yet", "এখনো কোনো ওয়েল্ডিং জব লগ করা হয়নি")
-    val noLogsDesc = BiText(
-        "Tap + Log Weld to record process, 1G–6G+ position, rod/filler, amps, gas, measuring tools, PPE & defects.",
-        "+ লগ ওয়েল্ড এ ট্যাপ করে প্রসেস, 1G–6G+ পজিশন, রড, অ্যাম্পিয়ার, গ্যাস, পরিমাপক যন্ত্র ও ত্রুটি সংরক্ষণ করুন।"
-    )
-    val editLog = BiText("Edit Weld Job", "ওয়েল্ড জব সম্পাদনা")
-    val createLog = BiText("Log Welding Job", "ওয়েল্ডিং জব লগ করুন")
-    val dateLabel = BiText("Date (YYYY-MM-DD)", "তারিখ (YYYY-MM-DD)")
-    val processLabel = BiText("Welding Process", "ওয়েল্ডিং প্রসেস")
-    val positionLabel = BiText("Position", "পজিশন")
-    val materialLabel = BiText("Base Material", "বেস মেটেরিয়াল")
-    val jointLabel = BiText("Joint Type", "জয়েন্ট টাইপ")
-    val rodFillerLabel = BiText("Rod / Filler & Size", "রড / ফিলার ও সাইজ")
-    val rodFillerHint = BiText("e.g., LB52 2.5mm or ER70S-6 2.4mm", "যেমন: LB52 2.5mm বা ER70S-6 2.4mm")
-    val tigSetupLabel = BiText("TIG Torch / Consumable Setup", "TIG টর্চ ও কনজিউমেবল সেটআপ")
-    val tigCupLabel = BiText("Ceramic Cup (#)", "সিরামিক কাপ (#)")
-    val tigColletLabel = BiText("Collet / Body", "কলেট / বডি")
-    val tigBackCapLabel = BiText("Back Cap", "ব্যাক ক্যাপ")
-    val tigTungstenLabel = BiText("Tungsten", "টাংস্টেন")
-    val machineSettingsLabel = BiText("Machine Settings", "মেশিন সেটিংস")
-    val ampsLabel = BiText("Amperage (A)", "অ্যাম্পিয়ার (A)")
-    val voltsLabel = BiText("Voltage (V)", "ভোল্টেজ (V)")
-    val gasFlowLabel = BiText("Argon / Gas (L/min or CFH)", "আর্গন / গ্যাস (L/min বা CFH)")
-    val measuringToolsLabel = BiText("Measuring Tool Checks", "পরিমাপক যন্ত্র যাচাই")
-    val ppeChecklistLabel = BiText("PPE & HSE Checklist Verified", "PPE ও HSE চেকলিস্ট সম্পন্ন")
-    val defectTagsLabel = BiText("Defect / Inspection Tags", "ত্রুটি / ইন্সপেকশন ট্যাগ")
-    val trainerFeedbackLabel = BiText("Trainer Feedback / Notes", "প্রশিক্ষকের মতামত / নোট")
-    val statusLabel = BiText("Result Status", "ফলাফল স্ট্যাটাস")
     val save = BiText("Save", "সংরক্ষণ করুন")
     val cancel = BiText("Cancel", "বাতিল")
-    val delete = BiText("Delete", "মুছুন")
-    val edit = BiText("Edit", "সম্পাদনা")
-    val confirmDelete = BiText("Delete this job log?", "এই জব লগটি মুছে ফেলবেন?")
 
-    // Viva & Memorizer
+    // Viva & Quiz (Learning & Assessment)
     val vivaQuizTab = BiText("Viva Quiz", "ভাইভা কুইজ")
+    val vivaDelegateTab = BiText("Delegator", "ডেলিগেটর")
     val rodMemorizerTab = BiText("Rod & Code Cards", "রড ও কোড কার্ড")
     val accuracyLabel = BiText("Accuracy", "সঠিকতা")
     val answeredLabel = BiText("Answered", "উত্তর দেওয়া")
-    val weakTopicsLabel = BiText("Focus / Weak Topics", "দুর্বল টপিক (অনুশীলন করুন)")
+    val weakTopicsLabel = BiText("Focus / Weak Topics", "অনুশীলন টপিক")
     val nextQuestion = BiText("Next Question", "পরবর্তী প্রশ্ন")
     val resetStats = BiText("Reset Quiz Stats", "কুইজ পরিসংখ্যান রিসেট")
     val explanationHeader = BiText("Technical Explanation", "টেকনিক্যাল ব্যাখ্যা")
     val tapToFlip = BiText("Tap card to flip specs & field tips", "স্পেকস ও টিপস দেখতে কার্ডে ট্যাপ করুন")
     val knewIt = BiText("Mastered", "আয়ত্ত হয়েছে")
     val reviewMore = BiText("Review Again", "আবার দেখুন")
+    val quizAutoReadToggle = BiText("Auto-Read Qs", "অটো পড়ে শোনানো")
+    val quizReadOptionsToggle = BiText("Read A–D Options", "অপশন A–D শোনান")
+    val quizReadExplanationBtn = BiText("Listen Explanation", "ব্যাখ্যা শুনুন")
+    val quizTtsSpeaking = BiText("Reading Aloud...", "পড়ে শোনানো হচ্ছে...")
+    val quizTtsReady = BiText("Voice Ready", "ভয়েস প্রস্তুত")
+    val quizTtsUnavailable = BiText("TTS Unavailable", "TTS পাওয়া যায়নি")
+    val quizCorrectAnnouncement = BiText("Correct.", "সঠিক উত্তর।")
+    val quizIncorrectAnnouncement = BiText("Incorrect.", "ভুল উত্তর।")
 
-    // Guides
+    // Guides & Reference Material
     val tabTheory = BiText("Theory & Topics", "থিওরি ও টপিক")
     val tabTips = BiText("Hands-On", "হাতে-কলমে")
     val tabDefects = BiText("Defect Fixer", "ত্রুটি সমাধান")
     val tabParams = BiText("Param Ref", "প্যারামিটার")
-    val tabPlanners = BiText("Planners", "প্ল্যানার")
+    val tabPlanners = BiText("Checklists", "চেকলিস্ট")
+    val stancePlannerTitle = BiText("Position & Stance Reference", "পজিশন ও স্ট্যান্স রেফারেন্স")
+    val tradeTestTitle = BiText("Trade Test & Overseas Prep", "ট্রেড টেস্ট ও বিদেশ যাত্রা")
     val likelyCauses = BiText("Likely Causes", "সম্ভাব্য কারণ")
     val practicalFixes = BiText("Practical Corrections", "বাস্তব সমাধান")
     val paramDisclaimer = BiText(
@@ -117,13 +59,13 @@ object AppStrings {
         "শুধুমাত্র সাধারণ শুরুর রেফারেন্স — সর্বদা আপনার WPS, ইলেকট্রোড প্যাকেটের নির্দেশনা ও মেশিন ক্যালিব্রেশন অনুযায়ী যাচাই করুন।"
     )
 
-    // AI Mentor
+    // AI Mentor / Live Hub
     val aiMentorTitle = BiText("JRS WeldMentor AI", "JRS ওয়েল্ডমেন্টর AI")
     val aiStrictScopeBadge = BiText("Strictly Welding & App Scoped", "শুধুমাত্র ওয়েল্ডিং ও অ্যাপ বিষয়ক")
     val aiNoKeyTitle = BiText("Gemini API Key Not Set", "Gemini API কী সেট করা নেই")
     val aiNoKeyDesc = BiText(
-        "Enter your personal Google Gemini API key in Settings to chat with the bilingual Welding AI Mentor. Core logbook, quiz & guides stay 100% offline.",
-        "বাংলা বা ইংরেজিতে ওয়েল্ডিং AI মেন্টরের সাথে কথা বলতে সেটিংসে আপনার নিজস্ব Google Gemini API কী দিন। লগবুক, কুইজ ও গাইড ১০০% অফলাইনে চলে।"
+        "Enter your personal Google Gemini API key in Settings to unlock live AI mentorship. Viva Quiz, Delegator Mode, Welding Guides & Currency Converter work 100% offline.",
+        "লাইভ AI মেন্টর ব্যবহার করতে সেটিংসে আপনার নিজস্ব Google Gemini API কী দিন। ভাইভা কুইজ, ডেলিগেটর মোড, ওয়েল্ডিং গাইড ও কারেন্সি কনভার্টার ১০০% অফলাইনে চলে।"
     )
     val openSettingsBtn = BiText("Configure API Key", "API কী সেট করুন")
     val aiOfflineBanner = BiText(
@@ -133,33 +75,21 @@ object AppStrings {
     val aiInputHint = BiText("Ask about 6G TIG, LB52 amps, undercut, viva...", "6G TIG, LB52 অ্যাম্পস, আন্ডারকাট, ভাইভা নিয়ে জিজ্ঞাসা করুন...")
     val clearChat = BiText("Clear Chat", "চ্যাট মুছুন")
 
-    // Settings, Backup & About
+    // Settings, Study Backup & About
     val settingsTitle = BiText("Settings", "সেটিংস")
     val languageSection = BiText("App Language / ভাষা", "অ্যাপের ভাষা / Language")
-    val profileSection = BiText("Trainee Profile", "প্রশিক্ষণার্থী প্রোফাইল")
-    val traineeNameLabel = BiText("Trainee Name", "প্রশিক্ষণার্থীর নাম")
-    val targetTradeLabel = BiText("Target Trade / Position", "লক্ষ্য ট্রেড / পজিশন")
-    val geminiKeySection = BiText("Bring-Your-Own Gemini API Key", "নিজস্ব Gemini API কী (BYOK)")
+    val profileSection = BiText("Learner Profile", "শিক্ষার্থীর প্রোফাইল")
+    val traineeNameLabel = BiText("Learner Name", "শিক্ষার্থীর নাম")
+    val targetTradeLabel = BiText("Target Trade / Certification", "লক্ষ্য ট্রেড / সার্টিফিকেশন")
     val geminiKeyHint = BiText("Paste your AIza... Gemini API key", "আপনার AIza... Gemini API কী পেস্ট করুন")
     val geminiModelLabel = BiText("Gemini Model", "Gemini মডেল")
-    val saveKey = BiText("Save Key", "কী সংরক্ষণ")
     val clearKey = BiText("Clear", "মুছুন")
-    val keySavedMsg = BiText("API key saved locally on device.", "API কী ডিভাইসে নিরাপদে সংরক্ষিত হয়েছে।")
-    val backupSection = BiText("Backup & Restore (Offline Portability)", "ব্যাকআপ ও রিস্টোর (অফলাইন সুরক্ষা)")
-    val exportJsonBtn = BiText("Export Full JSON", "সম্পূর্ণ JSON এক্সপোর্ট")
-    val exportCsvBtn = BiText("Export Logs CSV", "লগ CSV এক্সপোর্ট")
-    val importBackupBtn = BiText("Import JSON / CSV", "JSON / CSV ইম্পোর্ট")
-    val shareSummaryTitle = BiText("Practice Summary Card", "প্র্যাকটিস সামারি কার্ড")
-    val copyReport = BiText("Copy Text", "টেক্সট কপি")
-    val shareReport = BiText("Share", "শেয়ার")
-    val printReport = BiText("Print / PDF", "প্রিন্ট / PDF")
-    val copiedFeedback = BiText("Copied to clipboard", "ক্লিপবোর্ডে কপি হয়েছে")
+    val backupSection = BiText("Study Progress Backup & Restore", "পড়াশোনার ব্যাকআপ ও রিস্টোর")
+    val exportJsonBtn = BiText("Export Progress JSON", "প্রোগ্রেস JSON এক্সপোর্ট")
+    val importBackupBtn = BiText("Import Backup JSON", "ব্যাকআপ JSON ইম্পোর্ট")
     val visitWebsite = BiText("Visit Jakariya41jr.xyz", "Jakariya41jr.xyz ভিজিট করুন")
 
     // Currency Converter & Salary Estimator
-    val navCurrency = BiText("Currency", "মুদ্রা")
-    val currencyHomeTitle = BiText("Currency Converter", "কারেন্সি কনভার্টার")
-    val currencyHomeDesc = BiText("BDT, SAR, AED, KWD & salary OT", "BDT, SAR, AED, KWD ও বেতন-ওভারটাইম")
     val currencyTabConverter = BiText("Converter", "কনভার্টার")
     val currencyTabSalary = BiText("Salary & OT", "বেতন ও ওভারটাইম")
     val currencyPopularLabel = BiText("Popular Welding Destinations", "জনপ্রিয় ওয়েল্ডিং গন্তব্যসমূহ")
@@ -194,7 +124,6 @@ object AppStrings {
     val salaryTotalBdt = BiText("Total Monthly Equivalent (BDT)", "মোট মাসিক সমতুল্য (বাংলাদেশি টাকা)")
 
     // Voice Input, TTS & Delegate Viva Mode
-    val vivaDelegateTab = BiText("Delegator", "ডেলিগেটর")
     val voiceSpeakBtn = BiText("Speak", "বলুন")
     val voiceListening = BiText("Listening...", "শুনছি...")
     val voiceSpeakAnswer = BiText("Speak Answer", "মুখে উত্তর দিন")
@@ -209,10 +138,10 @@ object AppStrings {
         "Speech recognition service is not available on this device.",
         "এই ডিভাইসে ভয়েস রিকগনিশন সেবা পাওয়া যায়নি।"
     )
-    val delegateModeTitle = BiText("Viva Delegator / Interview", "ভাইভা ডেলিগেটর মোড")
+    val delegateModeTitle = BiText("Viva Delegator Mode", "ভাইভা ডেলিগেটর মোড")
     val delegateModeSubtitle = BiText(
-        "Answer by voice or text — passed answers auto-save to Viva Readiness",
-        "কণ্ঠে বা লিখে উত্তর দিন — পাস করলে ভাইভা প্রোগ্রেস স্বয়ংক্রিয়ভাবে সেভ হবে"
+        "Answer by voice or text — examiner evaluates live & reads feedback aloud",
+        "কণ্ঠে বা লিখে উত্তর দিন — পরীক্ষক তাৎক্ষণিক যাচাই করে উত্তর পড়ে শোনাবে"
     )
     val delegateAnswerHint = BiText(
         "Speak or type your viva answer here...",
@@ -220,7 +149,7 @@ object AppStrings {
     )
     val delegateSubmitBtn = BiText("Evaluate Answer", "উত্তর যাচাই করুন")
     val delegateEvaluating = BiText("Examiner reviewing...", "পরীক্ষক যাচাই করছেন...")
-    val delegatePassedBadge = BiText("PASSED • Auto-Saved to Progress", "পাস • প্রোগ্রেসে সংরক্ষিত")
+    val delegatePassedBadge = BiText("PASSED • Concept Mastered", "পাস • ধারণা আয়ত্ত হয়েছে")
     val delegateReviewBadge = BiText("NEEDS REVIEW • Try Again or Next", "পুনরায় দেখুন • আবার চেষ্টা করুন")
     val delegateOfflineBadge = BiText("Offline Interview Mode", "অফলাইন ইন্টারভিউ")
     val delegateAiBadge = BiText("Gemini AI Examiner", "Gemini AI পরীক্ষক")
@@ -231,7 +160,6 @@ object AppStrings {
         "Default: gemini-3.0-flash. Saving your key automatically verifies it and picks the best available model—no manual model selection needed.",
         "ডিফল্ট: gemini-3.0-flash। কী সংরক্ষণ করলে স্বয়ংক্রিয়ভাবে যাচাই হয়ে সেরা মডেল চালু হবে—আলাদা মডেল সিলেক্ট করতে হবে না।"
     )
-    val keyStatusLabel = BiText("AI Key & Model Status", "AI কী ও মডেল স্ট্যাটাস")
     val statusMissing = BiText("Key Not Set", "কী সেট করা নেই")
     val statusValidating = BiText("Validating & detecting model...", "যাচাই ও মডেল শনাক্ত হচ্ছে...")
     val statusActive = BiText("Active", "সক্রিয়")
@@ -262,7 +190,7 @@ object AppStrings {
     val shuffledSetBadge = BiText("Randomized Set", "শাফলড সেট")
     val aiModeChatLabel = BiText("AI Chat", "AI চ্যাট")
     val aiModeDelegatorLabel = BiText("Delegator Mode", "ডেলিগেটর মোড")
-    val launchFullVivaDeckBtn = BiText("Open Viva Cards", "ভাইভা কার্ড খুলুন")
+    val launchFullVivaDeckBtn = BiText("Open Viva Quiz & Cards", "ভাইভা কুইজ ও কার্ড খুলুন")
     val liveHearingPrefix = BiText("Hearing", "শুনছি")
 
     // Central Energy Orb Status & Barge-In Interrupt Cues
@@ -285,8 +213,8 @@ object AppStrings {
         "AI কথা বলার সময়ই থামিয়ে সাথে সাথে নিজের কথা বলুন"
     )
     val autoSpeakDesc = BiText(
-        "Automatically read AI & examiner feedback aloud",
-        "AI ও পরীক্ষকের উত্তর স্বয়ংক্রিয়ভাবে পড়ে শোনাবে"
+        "Automatically read Viva questions, AI & examiner feedback aloud",
+        "ভাইভা প্রশ্ন, AI ও পরীক্ষকের উত্তর স্বয়ংক্রিয়ভাবে পড়ে শোনাবে"
     )
     val voiceCadenceLabel = BiText("Voice Cadence", "ভয়েস গতি")
     val speedRelaxed = BiText("Relaxed", "ধীর ও স্পষ্ট")
@@ -297,6 +225,5 @@ object AppStrings {
     val permGrantBtn = BiText("Grant Mic", "অনুমতি দিন")
     val ttsStatusLabel = BiText("Voice Engine (TTS)", "ভয়েস ইঞ্জিন (TTS)")
     val ttsEngineReady = BiText("Natural Audio Ready", "অডিও প্রস্তুত")
-    val ttsEngineInit = BiText("Initializing...", "চালু হচ্ছে...")
     val aboutDevSection = BiText("Developer & Ownership", "ডেভেলপার ও স্বত্ব")
 }
