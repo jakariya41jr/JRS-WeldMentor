@@ -22,8 +22,31 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 
 const val DEFAULT_GEMINI_MODEL = "gemini-3.0-flash"
 
+enum class AppThemeMode(val code: String) {
+    DARK("dark"),
+    LIGHT("light");
+
+    companion object {
+        fun fromCode(code: String?): AppThemeMode = if (code == "light") LIGHT else DARK
+    }
+}
+
+enum class SpeechSpeedPreset(val code: String, val rateMultiplier: Float) {
+    RELAXED("relaxed", 0.88f),
+    NATURAL("natural", 0.97f),
+    CRISP("crisp", 1.07f);
+
+    companion object {
+        fun fromCode(code: String?): SpeechSpeedPreset = entries.firstOrNull { it.code == code } ?: NATURAL
+    }
+}
+
 data class UserPreferences(
     val language: AppLanguage = AppLanguage.EN,
+    val themeMode: AppThemeMode = AppThemeMode.DARK,
+    val autoSpeakAi: Boolean = true,
+    val bargeInEnabled: Boolean = true,
+    val speechSpeedPreset: SpeechSpeedPreset = SpeechSpeedPreset.NATURAL,
     val geminiApiKey: String = "",
     val geminiModel: String = DEFAULT_GEMINI_MODEL,
     val traineeName: String = "Welding Trainee",
@@ -45,6 +68,10 @@ data class UserPreferences(
 class PreferencesManager(private val context: Context) {
     private object Keys {
         val LANGUAGE = stringPreferencesKey("language")
+        val THEME_MODE = stringPreferencesKey("theme_mode")
+        val AUTO_SPEAK_AI = booleanPreferencesKey("auto_speak_ai")
+        val BARGE_IN_ENABLED = booleanPreferencesKey("barge_in_enabled")
+        val SPEECH_SPEED = stringPreferencesKey("speech_speed")
         val GEMINI_API_KEY = stringPreferencesKey("gemini_api_key")
         val GEMINI_MODEL = stringPreferencesKey("gemini_model")
         val TRAINEE_NAME = stringPreferencesKey("trainee_name")
@@ -78,6 +105,10 @@ class PreferencesManager(private val context: Context) {
 
         UserPreferences(
             language = if (prefs[Keys.LANGUAGE] == "bn") AppLanguage.BN else AppLanguage.EN,
+            themeMode = AppThemeMode.fromCode(prefs[Keys.THEME_MODE]),
+            autoSpeakAi = prefs[Keys.AUTO_SPEAK_AI] ?: true,
+            bargeInEnabled = prefs[Keys.BARGE_IN_ENABLED] ?: true,
+            speechSpeedPreset = SpeechSpeedPreset.fromCode(prefs[Keys.SPEECH_SPEED]),
             geminiApiKey = prefs[Keys.GEMINI_API_KEY] ?: "",
             geminiModel = resolvedModel,
             traineeName = prefs[Keys.TRAINEE_NAME] ?: "Welding Trainee",
@@ -99,6 +130,22 @@ class PreferencesManager(private val context: Context) {
 
     suspend fun setLanguage(language: AppLanguage) {
         context.dataStore.edit { it[Keys.LANGUAGE] = language.code }
+    }
+
+    suspend fun setThemeMode(mode: AppThemeMode) {
+        context.dataStore.edit { it[Keys.THEME_MODE] = mode.code }
+    }
+
+    suspend fun setVoiceSettings(
+        autoSpeakAi: Boolean? = null,
+        bargeInEnabled: Boolean? = null,
+        speechSpeedPreset: SpeechSpeedPreset? = null
+    ) {
+        context.dataStore.edit { prefs ->
+            autoSpeakAi?.let { prefs[Keys.AUTO_SPEAK_AI] = it }
+            bargeInEnabled?.let { prefs[Keys.BARGE_IN_ENABLED] = it }
+            speechSpeedPreset?.let { prefs[Keys.SPEECH_SPEED] = it.code }
+        }
     }
 
     suspend fun setGeminiConfig(apiKey: String, model: String = DEFAULT_GEMINI_MODEL) {

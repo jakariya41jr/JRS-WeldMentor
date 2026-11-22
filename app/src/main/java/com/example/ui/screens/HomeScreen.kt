@@ -76,19 +76,11 @@ import com.example.R
 import com.example.data.local.DailyTaskEntity
 import com.example.i18n.AppLanguage
 import com.example.i18n.AppStrings
-import com.example.ui.theme.ArcCyan
 import com.example.ui.theme.ArcStatusPill
 import com.example.ui.theme.DeepSlateBg
-import com.example.ui.theme.GlassBorder
 import com.example.ui.theme.GlassCard
 import com.example.ui.theme.GlassSectionHeader
-import com.example.ui.theme.MoltenAmber
-import com.example.ui.theme.PassEmerald
-import com.example.ui.theme.SlateSurface
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
-import com.example.ui.theme.VioletSpark
+import com.example.ui.theme.WeldTheme
 import com.example.ui.viewmodel.WeldUiState
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -106,6 +98,7 @@ fun HomeScreen(
     onDeleteTask: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val palette = WeldTheme.colors
     val context = LocalContext.current
     val lang = uiState.preferences.language
     val metrics = uiState.metrics
@@ -122,7 +115,7 @@ fun HomeScreen(
             GlassCard(
                 modifier = Modifier.fillMaxWidth(),
                 cornerRadius = 24.dp,
-                borderColor = ArcCyan.copy(alpha = 0.35f),
+                borderColor = palette.arcCyan.copy(alpha = 0.35f),
                 contentPadding = 0.dp
             ) {
                 Box(
@@ -162,12 +155,12 @@ fun HomeScreen(
                         ) {
                             ArcStatusPill(
                                 text = prefs.targetTrade,
-                                color = ArcCyan,
+                                color = Color(0xFF38BDF8),
                                 icon = Icons.Filled.Verified
                             )
                             ArcStatusPill(
                                 text = "${prefs.streakDays} ${AppStrings.daysUnit.get(lang)}",
-                                color = MoltenAmber,
+                                color = Color(0xFFF59E0B),
                                 icon = Icons.Filled.LocalFireDepartment
                             )
                         }
@@ -176,7 +169,7 @@ fun HomeScreen(
                             Text(
                                 text = AppStrings.heroTitle.get(lang),
                                 style = MaterialTheme.typography.headlineMedium,
-                                color = TextPrimary,
+                                color = Color(0xFFF1F5F9),
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -184,7 +177,7 @@ fun HomeScreen(
                             Text(
                                 text = AppStrings.heroSubtitle.get(lang),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = TextSecondary,
+                                color = Color(0xFFCBD5E1),
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -197,8 +190,8 @@ fun HomeScreen(
                                     onClick = onOpenNewLog,
                                     modifier = Modifier.testTag("home_log_new_weld_btn"),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = ArcCyan,
-                                        contentColor = Color(0xFF04131E)
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary
                                     ),
                                     shape = RoundedCornerShape(12.dp),
                                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
@@ -217,21 +210,21 @@ fun HomeScreen(
                                 OutlinedButton(
                                     onClick = onOpenSummaryCard,
                                     modifier = Modifier.testTag("home_summary_card_btn"),
-                                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.25f)),
+                                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
                                     shape = RoundedCornerShape(12.dp),
                                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.Assessment,
                                         contentDescription = null,
-                                        tint = TextPrimary,
+                                        tint = Color.White,
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
                                         text = AppStrings.shareReport.get(lang),
                                         style = MaterialTheme.typography.labelLarge,
-                                        color = TextPrimary
+                                        color = Color.White
                                     )
                                 }
                             }
@@ -253,7 +246,7 @@ fun HomeScreen(
                         value = "${metrics.totalJobs}",
                         subtitle = "${metrics.uniquePositions.size}/6 ${AppStrings.positionsMastered.get(lang)}",
                         progress = metrics.practicalProgress,
-                        accentColor = ArcCyan,
+                        accentColor = palette.arcCyan,
                         icon = Icons.Filled.Build,
                         modifier = Modifier.weight(1f)
                     )
@@ -262,7 +255,7 @@ fun HomeScreen(
                         value = "${metrics.quizAccuracyPct}%",
                         subtitle = "${metrics.totalQuizAnswered} ${AppStrings.answeredLabel.get(lang)}",
                         progress = metrics.vivaProgress,
-                        accentColor = VioletSpark,
+                        accentColor = palette.violetSpark,
                         icon = Icons.Filled.Quiz,
                         modifier = Modifier.weight(1f)
                     )
@@ -277,13 +270,13 @@ fun HomeScreen(
                         value = "${metrics.passRatePct}%",
                         subtitle = "${metrics.passCount}/${metrics.totalJobs} Pass",
                         progress = if (metrics.totalJobs == 0) 0f else metrics.passRatePct / 100f,
-                        accentColor = PassEmerald,
+                        accentColor = palette.passEmerald,
                         icon = Icons.Filled.CheckCircle,
                         modifier = Modifier.weight(1f)
                     )
                     GlassCard(
                         modifier = Modifier.weight(1f),
-                        accentGlow = MoltenAmber,
+                        accentGlow = palette.moltenAmber,
                         contentPadding = 14.dp
                     ) {
                         Row(
@@ -294,20 +287,20 @@ fun HomeScreen(
                             Icon(
                                 imageVector = Icons.Filled.Timer,
                                 contentDescription = null,
-                                tint = MoltenAmber,
+                                tint = palette.moltenAmber,
                                 modifier = Modifier.size(18.dp)
                             )
                             Surface(
                                 onClick = { onAddPracticeMinutes(15) },
                                 modifier = Modifier.testTag("add_15_min_btn"),
                                 shape = RoundedCornerShape(8.dp),
-                                color = MoltenAmber.copy(alpha = 0.20f),
-                                border = BorderStroke(1.dp, MoltenAmber.copy(alpha = 0.5f))
+                                color = palette.moltenAmber.copy(alpha = 0.18f),
+                                border = BorderStroke(1.dp, palette.moltenAmber.copy(alpha = 0.5f))
                             ) {
                                 Text(
                                     text = AppStrings.add15Min.get(lang),
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = MoltenAmber,
+                                    color = palette.moltenAmber,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                 )
                             }
@@ -316,12 +309,12 @@ fun HomeScreen(
                         Text(
                             text = "${prefs.practiceMinutesToday}m",
                             style = MaterialTheme.typography.headlineMedium,
-                            color = TextPrimary
+                            color = palette.textPrimary
                         )
                         Text(
                             text = "${AppStrings.practiceMinutes.get(lang)} / ${prefs.dailyMinutesGoal}m",
                             style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary,
+                            color = palette.textSecondary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -335,8 +328,8 @@ fun HomeScreen(
                                 .fillMaxWidth()
                                 .height(6.dp)
                                 .clip(RoundedCornerShape(4.dp)),
-                            color = MoltenAmber,
-                            trackColor = Color.White.copy(alpha = 0.08f),
+                            color = palette.moltenAmber,
+                            trackColor = palette.progressTrack,
                             strokeCap = StrokeCap.Round
                         )
                     }
@@ -351,7 +344,7 @@ fun HomeScreen(
                     Text(
                         text = AppStrings.positionsMastered.get(lang),
                         style = MaterialTheme.typography.titleSmall,
-                        color = TextPrimary
+                        color = palette.textPrimary
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     FlowRow(
@@ -359,7 +352,7 @@ fun HomeScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         metrics.uniquePositions.forEach { pos ->
-                            ArcStatusPill(text = pos, color = PassEmerald)
+                            ArcStatusPill(text = pos, color = palette.passEmerald)
                         }
                     }
                 }
@@ -373,14 +366,14 @@ fun HomeScreen(
                     title = AppStrings.dailyGoalsHeader.get(lang),
                     subtitle = "${metrics.todayJobs}/${prefs.dailyJobGoal} Jobs • ${metrics.todayQuizAnswered}/${prefs.dailyQuizGoal} Quiz",
                     icon = Icons.Filled.CheckCircle,
-                    iconTint = PassEmerald,
+                    iconTint = palette.passEmerald,
                     trailing = {
                         Surface(
                             onClick = { showAddTaskDialog = true },
                             modifier = Modifier.testTag("home_add_task_btn"),
                             shape = RoundedCornerShape(10.dp),
-                            color = ArcCyan.copy(alpha = 0.16f),
-                            border = BorderStroke(1.dp, ArcCyan.copy(alpha = 0.45f))
+                            color = palette.arcCyan.copy(alpha = 0.14f),
+                            border = BorderStroke(1.dp, palette.arcCyan.copy(alpha = 0.45f))
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
@@ -389,14 +382,14 @@ fun HomeScreen(
                                 Icon(
                                     imageVector = Icons.Filled.Add,
                                     contentDescription = AppStrings.addTask.get(lang),
-                                    tint = ArcCyan,
+                                    tint = palette.arcCyan,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = AppStrings.addTask.get(lang),
                                     style = MaterialTheme.typography.labelLarge,
-                                    color = ArcCyan
+                                    color = palette.arcCyan
                                 )
                             }
                         }
@@ -420,8 +413,8 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("home_viva_delegator_card"),
-                accentGlow = VioletSpark,
-                borderColor = VioletSpark.copy(alpha = 0.45f),
+                accentGlow = palette.violetSpark,
+                borderColor = palette.violetSpark.copy(alpha = 0.45f),
                 onClick = onOpenVivaDelegator,
                 contentPadding = 16.dp
             ) {
@@ -431,13 +424,13 @@ fun HomeScreen(
                 ) {
                     Surface(
                         shape = RoundedCornerShape(14.dp),
-                        color = VioletSpark.copy(alpha = 0.18f),
-                        border = BorderStroke(1.dp, VioletSpark.copy(alpha = 0.45f))
+                        color = palette.violetSpark.copy(alpha = 0.16f),
+                        border = BorderStroke(1.dp, palette.violetSpark.copy(alpha = 0.45f))
                     ) {
                         Icon(
                             imageVector = Icons.Filled.RecordVoiceOver,
                             contentDescription = AppStrings.delegateHomeTitle.get(lang),
-                            tint = VioletSpark,
+                            tint = palette.violetSpark,
                             modifier = Modifier
                                 .padding(12.dp)
                                 .size(24.dp)
@@ -448,19 +441,19 @@ fun HomeScreen(
                         Text(
                             text = AppStrings.delegateHomeTitle.get(lang),
                             style = MaterialTheme.typography.titleMedium,
-                            color = TextPrimary
+                            color = palette.textPrimary
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = AppStrings.delegateHomeDesc.get(lang),
                             style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary
+                            color = palette.textSecondary
                         )
                     }
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = null,
-                        tint = VioletSpark,
+                        tint = palette.violetSpark,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -472,7 +465,7 @@ fun HomeScreen(
             GlassSectionHeader(
                 title = AppStrings.quickToolsHeader.get(lang),
                 icon = Icons.Filled.Build,
-                iconTint = ArcCyan
+                iconTint = palette.arcCyan
             )
             Spacer(modifier = Modifier.height(10.dp))
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -484,7 +477,7 @@ fun HomeScreen(
                         title = AppStrings.stancePlannerTitle.get(lang),
                         subtitle = AppStrings.stancePlannerDesc.get(lang),
                         icon = Icons.Filled.Build,
-                        accent = MoltenAmber,
+                        accent = palette.moltenAmber,
                         tag = "tool_stance_planner",
                         onClick = onOpenPlanners,
                         modifier = Modifier.weight(1f)
@@ -493,7 +486,7 @@ fun HomeScreen(
                         title = AppStrings.tradeTestTitle.get(lang),
                         subtitle = AppStrings.tradeTestDesc.get(lang),
                         icon = Icons.Filled.FlightTakeoff,
-                        accent = PassEmerald,
+                        accent = palette.passEmerald,
                         tag = "tool_trade_test",
                         onClick = onOpenPlanners,
                         modifier = Modifier.weight(1f)
@@ -507,7 +500,7 @@ fun HomeScreen(
                         title = AppStrings.currencyHomeTitle.get(lang),
                         subtitle = AppStrings.currencyHomeDesc.get(lang),
                         icon = Icons.Filled.CurrencyExchange,
-                        accent = VioletSpark,
+                        accent = palette.violetSpark,
                         tag = "tool_currency_converter",
                         onClick = onOpenCurrency,
                         modifier = Modifier.weight(1f)
@@ -516,7 +509,7 @@ fun HomeScreen(
                         title = AppStrings.summaryCardTitle.get(lang),
                         subtitle = AppStrings.summaryCardDesc.get(lang),
                         icon = Icons.Filled.Assessment,
-                        accent = ArcCyan,
+                        accent = palette.arcCyan,
                         tag = "tool_summary_card",
                         onClick = onOpenSummaryCard,
                         modifier = Modifier.weight(1f)
@@ -531,7 +524,7 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("home_dev_brand_card"),
-                borderColor = ArcCyan.copy(alpha = 0.35f),
+                borderColor = palette.arcCyan.copy(alpha = 0.35f),
                 onClick = {
                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(AppStrings.devWebsiteUrl))
                     context.startActivity(intent)
@@ -555,17 +548,17 @@ fun HomeScreen(
                         Text(
                             text = AppStrings.appName,
                             style = MaterialTheme.typography.titleSmall,
-                            color = TextPrimary
+                            color = palette.textPrimary
                         )
                         Text(
                             text = "Developed by ${AppStrings.devName}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary
+                            color = palette.textSecondary
                         )
                     }
                     ArcStatusPill(
                         text = AppStrings.devWebsite,
-                        color = ArcCyan,
+                        color = palette.arcCyan,
                         icon = Icons.Filled.OpenInBrowser
                     )
                 }
@@ -596,6 +589,7 @@ private fun MetricProgressCard(
     icon: ImageVector,
     modifier: Modifier = Modifier
 ) {
+    val palette = WeldTheme.colors
     GlassCard(
         modifier = modifier,
         accentGlow = accentColor,
@@ -611,19 +605,19 @@ private fun MetricProgressCard(
         Text(
             text = value,
             style = MaterialTheme.typography.headlineMedium,
-            color = TextPrimary
+            color = palette.textPrimary
         )
         Text(
             text = title,
             style = MaterialTheme.typography.labelLarge,
-            color = TextPrimary,
+            color = palette.textPrimary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
         Text(
             text = subtitle,
             style = MaterialTheme.typography.bodySmall,
-            color = TextSecondary,
+            color = palette.textSecondary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -635,7 +629,7 @@ private fun MetricProgressCard(
                 .height(6.dp)
                 .clip(RoundedCornerShape(4.dp)),
             color = accentColor,
-            trackColor = Color.White.copy(alpha = 0.08f),
+            trackColor = palette.progressTrack,
             strokeCap = StrokeCap.Round
         )
     }
@@ -648,18 +642,19 @@ private fun DailyTaskRowCard(
     onToggle: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val palette = WeldTheme.colors
     val title = if (lang == AppLanguage.BN && task.titleBn.isNotBlank()) task.titleBn else task.titleEn
     val catColor = when (task.category) {
-        "PRACTICAL" -> ArcCyan
-        "VIVA" -> VioletSpark
-        else -> MoltenAmber
+        "PRACTICAL" -> palette.arcCyan
+        "VIVA" -> palette.violetSpark
+        else -> palette.moltenAmber
     }
     GlassCard(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("daily_task_${task.id}"),
         onClick = onToggle,
-        borderColor = if (task.isDone) PassEmerald.copy(alpha = 0.4f) else GlassBorder,
+        borderColor = if (task.isDone) palette.passEmerald.copy(alpha = 0.4f) else palette.glassBorder,
         contentPadding = 12.dp
     ) {
         Row(
@@ -669,7 +664,7 @@ private fun DailyTaskRowCard(
             Icon(
                 imageVector = if (task.isDone) Icons.Filled.CheckCircle else Icons.Outlined.RadioButtonUnchecked,
                 contentDescription = title,
-                tint = if (task.isDone) PassEmerald else TextSecondary,
+                tint = if (task.isDone) palette.passEmerald else palette.textSecondary,
                 modifier = Modifier.size(22.dp)
             )
             Spacer(modifier = Modifier.width(10.dp))
@@ -679,7 +674,7 @@ private fun DailyTaskRowCard(
                     style = MaterialTheme.typography.bodyMedium.copy(
                         textDecoration = if (task.isDone) TextDecoration.LineThrough else TextDecoration.None
                     ),
-                    color = if (task.isDone) TextMuted else TextPrimary
+                    color = if (task.isDone) palette.textMuted else palette.textPrimary
                 )
                 Spacer(modifier = Modifier.height(3.dp))
                 ArcStatusPill(text = task.category, color = catColor)
@@ -691,7 +686,7 @@ private fun DailyTaskRowCard(
                 Icon(
                     imageVector = Icons.Filled.DeleteOutline,
                     contentDescription = AppStrings.delete.get(lang),
-                    tint = TextMuted,
+                    tint = palette.textMuted,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -709,6 +704,7 @@ private fun QuickToolTile(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val palette = WeldTheme.colors
     GlassCard(
         modifier = modifier.testTag(tag),
         accentGlow = accent,
@@ -733,7 +729,7 @@ private fun QuickToolTile(
         Text(
             text = title,
             style = MaterialTheme.typography.titleSmall,
-            color = TextPrimary,
+            color = palette.textPrimary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -741,7 +737,7 @@ private fun QuickToolTile(
         Text(
             text = subtitle,
             style = MaterialTheme.typography.bodySmall,
-            color = TextSecondary,
+            color = palette.textSecondary,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
@@ -754,28 +750,29 @@ private fun AddDailyTaskDialog(
     onDismiss: () -> Unit,
     onConfirm: (String, String) -> Unit
 ) {
+    val palette = WeldTheme.colors
     var title by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("PRACTICAL") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = SlateSurface,
+        containerColor = palette.surface,
         title = {
-            Text(AppStrings.newTaskTitle.get(lang), color = TextPrimary)
+            Text(AppStrings.newTaskTitle.get(lang), color = palette.textPrimary)
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    placeholder = { Text(AppStrings.taskTitleHint.get(lang), color = TextMuted) },
+                    placeholder = { Text(AppStrings.taskTitleHint.get(lang), color = palette.textMuted) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("new_task_input"),
                     singleLine = false,
                     maxLines = 3
                 )
-                Text(AppStrings.taskCategoryLabel.get(lang), style = MaterialTheme.typography.labelLarge, color = TextSecondary)
+                Text(AppStrings.taskCategoryLabel.get(lang), style = MaterialTheme.typography.labelLarge, color = palette.textSecondary)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(
                         "PRACTICAL" to AppStrings.catPractical.get(lang),
@@ -787,8 +784,8 @@ private fun AddDailyTaskDialog(
                             onClick = { category = key },
                             label = { Text(label) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = ArcCyan.copy(alpha = 0.22f),
-                                selectedLabelColor = ArcCyan
+                                selectedContainerColor = palette.arcCyan.copy(alpha = 0.22f),
+                                selectedLabelColor = palette.arcCyan
                             )
                         )
                     }
@@ -806,7 +803,7 @@ private fun AddDailyTaskDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(AppStrings.cancel.get(lang), color = TextSecondary)
+                Text(AppStrings.cancel.get(lang), color = palette.textSecondary)
             }
         }
     )

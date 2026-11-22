@@ -125,6 +125,14 @@ class WeldRepository(context: Context) {
 
     suspend fun setLanguage(language: AppLanguage) = prefsManager.setLanguage(language)
 
+    suspend fun setThemeMode(mode: com.example.data.local.AppThemeMode) = prefsManager.setThemeMode(mode)
+
+    suspend fun setVoiceSettings(
+        autoSpeakAi: Boolean? = null,
+        bargeInEnabled: Boolean? = null,
+        speechSpeedPreset: com.example.data.local.SpeechSpeedPreset? = null
+    ) = prefsManager.setVoiceSettings(autoSpeakAi, bargeInEnabled, speechSpeedPreset)
+
     suspend fun setGeminiConfig(apiKey: String, model: String = DEFAULT_GEMINI_MODEL) =
         prefsManager.setGeminiConfig(apiKey, model)
 

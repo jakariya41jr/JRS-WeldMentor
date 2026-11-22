@@ -85,19 +85,10 @@ import com.example.i18n.AppLanguage
 import com.example.i18n.AppStrings
 import com.example.i18n.BiText
 import com.example.ui.components.CenterpiecePhase
-import com.example.ui.components.WeldingArcCenterpiece
-import com.example.ui.theme.ArcCyan
+import com.example.ui.components.WeldEnergyOrbCenterpiece
 import com.example.ui.theme.ArcStatusPill
-import com.example.ui.theme.GlassBorder
 import com.example.ui.theme.GlassCard
-import com.example.ui.theme.MoltenAmber
-import com.example.ui.theme.PassEmerald
-import com.example.ui.theme.SlateSurfaceElevated
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
-import com.example.ui.theme.VioletSpark
-import com.example.ui.theme.WarnRose
+import com.example.ui.theme.WeldTheme
 import com.example.ui.viewmodel.WeldUiState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -115,6 +106,7 @@ fun AiMentorScreen(
     uiState: WeldUiState,
     onSendMessage: (String) -> Unit,
     onClearChat: () -> Unit,
+    onToggleAutoSpeak: (Boolean) -> Unit,
     onSubmitDelegateAnswer: (QuizQuestion, String) -> Unit,
     onNextDelegateQuestion: (Int) -> Unit,
     onShuffleDelegateQuestions: (Int) -> Unit,
@@ -123,23 +115,26 @@ fun AiMentorScreen(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val lang = uiState.preferences.language
-    val hasKey = uiState.preferences.geminiApiKey.isNotBlank()
+    val palette = WeldTheme.colors
+    val prefs = uiState.preferences
+    val lang = prefs.language
+    val hasKey = prefs.geminiApiKey.isNotBlank()
     val isOnline = uiState.isOnline
     val chatState = uiState.aiChat
     val delegateState = uiState.vivaDelegate
     val apiKeyStatus = uiState.apiKeyStatus
+    val autoSpeakAi = prefs.autoSpeakAi
+    val bargeInEnabled = prefs.bargeInEnabled
 
     var input by remember { mutableStateOf("") }
     var delegateInput by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
-    val voice = rememberVoiceAssistantController(lang)
+    val voice = rememberVoiceAssistantController(lang, prefs.speechSpeedPreset)
     val scope = rememberCoroutineScope()
 
     // Session Mode: false = AI Chat Mentor, true = Live Delegator Session inside AI Mentor
     var isDelegatorSession by remember { mutableStateOf(false) }
 
-    var autoSpeakAi by remember { mutableStateOf(true) }
     var lastSpokenMessageId by remember { mutableStateOf<String?>(null) }
 
     // Dual Voice Mode for Chat
@@ -159,7 +154,7 @@ fun AiMentorScreen(
             onNoSpeech = {
                 if (liveSessionActive && !isDelegatorSession && isOnline && !chatState.isLoading && !voice.isSpeaking) {
                     scope.launch {
-                        delay(320)
+                        delay(260)
                         launchChatLiveListening()
                     }
                 }
@@ -181,7 +176,7 @@ fun AiMentorScreen(
             onNoSpeech = {
                 if (delegateLiveActive && isDelegatorSession && !delegateState.isEvaluating && !voice.isSpeaking) {
                     scope.launch {
-                        delay(320)
+                        delay(260)
                         launchMentorDelegateListening()
                     }
                 }
@@ -196,6 +191,100 @@ fun AiMentorScreen(
         )
     }
 
+    fun handleOrbInteraction() {
+        if (isDelegatorSession) {
+            when {
+                voice.isSpeaking -> {
+                    if (bargeInEnabled) {
+                        delegateLiveActive = true
+                        voice.interruptAndListen(
+                            silentTimeoutFallback = true,
+                            onNoSpeech = {
+                                if (delegateLiveActive && isDelegatorSession && !delegateState.isEvaluating && !voice.isSpeaking) {
+                                    scope.launch {
+                                        delay(260)
+                                        launchMentorDelegateListening()
+                                    }
+                                }
+                            },
+                            onResult = { spoken ->
+                                delegateInput = spoken
+                                onResetDelegateFeedback()
+                                if (delegateLiveActive && isDelegatorSession) {
+                                    onSubmitDelegateAnswer(delegateQuestion, spoken)
+                                }
+                            }
+                        )
+                    } else {
+                        voice.stopSpeaking()
+                    }
+                }
+                voice.isListening || delegateLiveActive -> {
+                    delegateLiveActive = false
+                    voice.stopListening()
+                    voice.stopSpeaking()
+                }
+                !delegateState.isEvaluating -> {
+                    delegateLiveActive = true
+                    voice.clearError()
+                    if (delegateState.lastFeedback != null || !voice.ttsReady) {
+                        launchMentorDelegateListening()
+                    } else {
+                        voice.speak(delegateQuestion.question.get(lang)) {
+                            if (delegateLiveActive && isDelegatorSession && !delegateState.isEvaluating) {
+                                scope.launch {
+                                    delay(260)
+                                    launchMentorDelegateListening()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            when {
+                voice.isSpeaking -> {
+                    if (bargeInEnabled && isOnline && hasKey) {
+                        isLiveTalkMode = true
+                        liveSessionActive = true
+                        voice.interruptAndListen(
+                            silentTimeoutFallback = true,
+                            onNoSpeech = {
+                                if (liveSessionActive && !isDelegatorSession && isOnline && !chatState.isLoading && !voice.isSpeaking) {
+                                    scope.launch {
+                                        delay(260)
+                                        launchChatLiveListening()
+                                    }
+                                }
+                            },
+                            onResult = { spoken ->
+                                if (liveSessionActive && !isDelegatorSession && isOnline && !chatState.isLoading) {
+                                    onSendMessage(spoken)
+                                }
+                            }
+                        )
+                    } else {
+                        voice.stopSpeaking()
+                    }
+                }
+                voice.isListening || liveSessionActive -> {
+                    liveSessionActive = false
+                    voice.stopListening()
+                    voice.stopSpeaking()
+                }
+                hasKey && isOnline && !chatState.isLoading -> {
+                    isLiveTalkMode = true
+                    liveSessionActive = true
+                    voice.clearError()
+                    launchChatLiveListening()
+                }
+                !hasKey -> {
+                    onOpenSettings()
+                }
+            }
+        }
+    }
+
     LaunchedEffect(chatState.messages.size) {
         if (chatState.messages.isNotEmpty() && !isDelegatorSession) {
             listState.animateScrollToItem(chatState.messages.size - 1)
@@ -206,7 +295,7 @@ fun AiMentorScreen(
                     voice.speak(latest.text) {
                         if (liveSessionActive && !isDelegatorSession && isOnline && !chatState.isLoading) {
                             scope.launch {
-                                delay(320)
+                                delay(260)
                                 launchChatLiveListening()
                             }
                         }
@@ -224,7 +313,7 @@ fun AiMentorScreen(
                 voice.speak(delegateQuestion.question.get(lang)) {
                     if (delegateLiveActive && isDelegatorSession && !delegateState.isEvaluating) {
                         scope.launch {
-                            delay(320)
+                            delay(260)
                             launchMentorDelegateListening()
                         }
                     }
@@ -242,7 +331,7 @@ fun AiMentorScreen(
                 voice.speak(fb) {
                     if (delegateLiveActive && isDelegatorSession) {
                         scope.launch {
-                            delay(380)
+                            delay(340)
                             if (delegateState.lastPassed == true) {
                                 delegateInput = ""
                                 onNextDelegateQuestion(allQuestions.size)
@@ -274,13 +363,13 @@ fun AiMentorScreen(
         }
     }
 
-    val (pillText, pillColor) = when (apiKeyStatus) {
-        ApiKeyStatus.Missing -> AppStrings.statusMissing.get(lang) to MoltenAmber
-        ApiKeyStatus.Validating -> AppStrings.statusValidating.get(lang) to ArcCyan
-        is ApiKeyStatus.Active -> "${AppStrings.statusActive.get(lang)} • ${apiKeyStatus.modelId}" to PassEmerald
-        is ApiKeyStatus.QuotaLimited -> AppStrings.statusQuotaLimited.get(lang) to MoltenAmber
-        is ApiKeyStatus.Invalid -> AppStrings.statusInvalid.get(lang) to WarnRose
-        is ApiKeyStatus.Offline -> "${AppStrings.statusOfflineSaved.get(lang)} • ${apiKeyStatus.modelId}" to MoltenAmber
+    val (pillText, _) = when (apiKeyStatus) {
+        ApiKeyStatus.Missing -> AppStrings.statusMissing.get(lang) to palette.moltenAmber
+        ApiKeyStatus.Validating -> AppStrings.statusValidating.get(lang) to palette.arcCyan
+        is ApiKeyStatus.Active -> "${AppStrings.statusActive.get(lang)} • ${apiKeyStatus.modelId}" to palette.passEmerald
+        is ApiKeyStatus.QuotaLimited -> AppStrings.statusQuotaLimited.get(lang) to palette.moltenAmber
+        is ApiKeyStatus.Invalid -> AppStrings.statusInvalid.get(lang) to palette.warnRose
+        is ApiKeyStatus.Offline -> "${AppStrings.statusOfflineSaved.get(lang)} • ${apiKeyStatus.modelId}" to palette.moltenAmber
     }
 
     val centerpiecePhase = when {
@@ -296,7 +385,7 @@ fun AiMentorScreen(
         centerpiecePhase == CenterpiecePhase.THINKING ->
             if (isDelegatorSession) AppStrings.delegateEvaluating.get(lang) else AppStrings.liveThinkingPrompt.get(lang)
         centerpiecePhase == CenterpiecePhase.SPEAKING ->
-            AppStrings.liveSpeakingPrompt.get(lang)
+            if (bargeInEnabled) AppStrings.orbTapToInterrupt.get(lang) else AppStrings.liveSpeakingPrompt.get(lang)
         centerpiecePhase == CenterpiecePhase.LISTENING ->
             AppStrings.liveListeningPrompt.get(lang)
         isDelegatorSession ->
@@ -305,15 +394,17 @@ fun AiMentorScreen(
             AppStrings.aiStrictScopeBadge.get(lang)
     }
 
+    val showCompactOrb = !isDelegatorSession && !isLiveTalkMode && hasKey && chatState.messages.isNotEmpty()
+
     Column(modifier = modifier.fillMaxSize()) {
-        // Animated Native Welding Arc & Voice Wave Visual Centerpiece
+        // Prominent Animated Energy Orb & Utility Strip
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            WeldingArcCenterpiece(
+            WeldEnergyOrbCenterpiece(
                 phase = centerpiecePhase,
                 title = if (isDelegatorSession) AppStrings.aiModeDelegatorLabel.get(lang) else AppStrings.aiMentorTitle.get(lang),
                 subtitle = centerpieceSubtitle,
@@ -321,7 +412,10 @@ fun AiMentorScreen(
                     if (isOnline && hasKey) AppStrings.delegateAiBadge.get(lang) else AppStrings.delegateOfflineBadge.get(lang)
                 } else {
                     pillText
-                }
+                },
+                lang = lang,
+                compact = showCompactOrb,
+                onOrbClick = { handleOrbInteraction() }
             )
 
             // Quick Utility Strip + Session Switcher (AI Chat vs Delegator Mode)
@@ -367,15 +461,16 @@ fun AiMentorScreen(
 
                 IconButton(
                     onClick = {
-                        autoSpeakAi = !autoSpeakAi
-                        if (!autoSpeakAi) voice.stopSpeaking()
+                        val next = !autoSpeakAi
+                        onToggleAutoSpeak(next)
+                        if (!next) voice.stopSpeaking()
                     },
                     modifier = Modifier.testTag("ai_auto_speak_toggle_btn")
                 ) {
                     Icon(
                         imageVector = if (autoSpeakAi) Icons.Filled.VolumeUp else Icons.Filled.VolumeOff,
                         contentDescription = AppStrings.voiceAutoSpeak.get(lang),
-                        tint = if (autoSpeakAi) PassEmerald else TextSecondary
+                        tint = if (autoSpeakAi) palette.passEmerald else palette.textSecondary
                     )
                 }
                 if (!isDelegatorSession && chatState.messages.isNotEmpty()) {
@@ -385,11 +480,11 @@ fun AiMentorScreen(
                         voice.stopSpeaking()
                         onClearChat()
                     }, modifier = Modifier.testTag("clear_ai_chat_btn")) {
-                        Icon(Icons.Filled.DeleteSweep, contentDescription = AppStrings.clearChat.get(lang), tint = TextSecondary)
+                        Icon(Icons.Filled.DeleteSweep, contentDescription = AppStrings.clearChat.get(lang), tint = palette.textSecondary)
                     }
                 }
                 IconButton(onClick = onOpenSettings, modifier = Modifier.testTag("ai_open_settings_btn")) {
-                    Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = ArcCyan)
+                    Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = palette.arcCyan)
                 }
             }
         }
@@ -412,8 +507,8 @@ fun AiMentorScreen(
                 ) {
                     GlassCard(
                         modifier = Modifier.fillMaxWidth(),
-                        borderColor = if (alreadyCompleted) PassEmerald.copy(alpha = 0.5f) else ArcCyan.copy(alpha = 0.4f),
-                        accentGlow = if (delegateLiveActive) PassEmerald else VioletSpark,
+                        borderColor = if (alreadyCompleted) palette.passEmerald.copy(alpha = 0.5f) else palette.arcCyan.copy(alpha = 0.4f),
+                        accentGlow = if (delegateLiveActive) palette.passEmerald else palette.violetSpark,
                         contentPadding = 16.dp
                     ) {
                         Row(
@@ -426,26 +521,24 @@ fun AiMentorScreen(
                                 verticalArrangement = Arrangement.spacedBy(6.dp),
                                 modifier = Modifier.weight(1f)
                             ) {
-                                ArcStatusPill(text = delegateQuestion.topic.get(lang), color = ArcCyan)
+                                ArcStatusPill(text = delegateQuestion.topic.get(lang), color = palette.arcCyan)
                                 ArcStatusPill(
                                     text = "${delegateState.completedQuestionIds.size}/${allQuestions.size} ${AppStrings.knewIt.get(lang)}",
-                                    color = if (alreadyCompleted) PassEmerald else VioletSpark,
+                                    color = if (alreadyCompleted) palette.passEmerald else palette.violetSpark,
                                     icon = if (alreadyCompleted) Icons.Filled.CheckCircle else null
                                 )
                             }
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                TextButton(
-                                    onClick = {
-                                        voice.stopSpeaking()
-                                        delegateInput = ""
-                                        onShuffleDelegateQuestions(allQuestions.size)
-                                    },
-                                    modifier = Modifier.testTag("ai_delegate_shuffle_btn")
-                                ) {
-                                    Icon(Icons.Filled.Refresh, contentDescription = null, tint = ArcCyan, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(AppStrings.shuffleQuestionsBtn.get(lang), color = ArcCyan)
-                                }
+                            TextButton(
+                                onClick = {
+                                    voice.stopSpeaking()
+                                    delegateInput = ""
+                                    onShuffleDelegateQuestions(allQuestions.size)
+                                },
+                                modifier = Modifier.testTag("ai_delegate_shuffle_btn")
+                            ) {
+                                Icon(Icons.Filled.Refresh, contentDescription = null, tint = palette.arcCyan, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(AppStrings.shuffleQuestionsBtn.get(lang), color = palette.arcCyan)
                             }
                         }
 
@@ -453,7 +546,7 @@ fun AiMentorScreen(
                         Text(
                             text = delegateQuestion.question.get(lang),
                             style = MaterialTheme.typography.titleMedium,
-                            color = TextPrimary
+                            color = palette.textPrimary
                         )
 
                         Spacer(modifier = Modifier.height(12.dp))
@@ -463,22 +556,35 @@ fun AiMentorScreen(
                         ) {
                             OutlinedButton(
                                 onClick = {
-                                    if (voice.isSpeaking) voice.stopSpeaking()
-                                    else voice.speak(delegateQuestion.question.get(lang))
+                                    if (voice.isSpeaking) {
+                                        if (bargeInEnabled) {
+                                            voice.interruptAndListen(
+                                                silentTimeoutFallback = false,
+                                                onResult = { spoken ->
+                                                    delegateInput = if (delegateInput.isBlank()) spoken else "$delegateInput $spoken"
+                                                    onResetDelegateFeedback()
+                                                }
+                                            )
+                                        } else {
+                                            voice.stopSpeaking()
+                                        }
+                                    } else {
+                                        voice.speak(delegateQuestion.question.get(lang))
+                                    }
                                 },
                                 modifier = Modifier.testTag("ai_delegate_speak_q_btn"),
-                                border = BorderStroke(1.dp, ArcCyan.copy(alpha = 0.5f))
+                                border = BorderStroke(1.dp, palette.arcCyan.copy(alpha = 0.5f))
                             ) {
                                 Icon(
                                     imageVector = if (voice.isSpeaking) Icons.Filled.Stop else Icons.Filled.VolumeUp,
                                     contentDescription = AppStrings.voiceTapListen.get(lang),
-                                    tint = ArcCyan,
+                                    tint = palette.arcCyan,
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = if (voice.isSpeaking) AppStrings.voiceStopSpeaking.get(lang) else AppStrings.voiceTapListen.get(lang),
-                                    color = ArcCyan
+                                    color = palette.arcCyan
                                 )
                             }
 
@@ -490,7 +596,7 @@ fun AiMentorScreen(
                                         voice.stopSpeaking()
                                     } else {
                                         delegateLiveActive = true
-                                        autoSpeakAi = true
+                                        onToggleAutoSpeak(true)
                                         voice.clearError()
                                         if (delegateState.lastFeedback != null || !voice.ttsReady) {
                                             launchMentorDelegateListening()
@@ -501,8 +607,8 @@ fun AiMentorScreen(
                                     .weight(1f)
                                     .testTag("ai_delegate_live_btn"),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (delegateLiveActive) WarnRose else PassEmerald,
-                                    contentColor = if (delegateLiveActive) Color.White else Color(0xFF022015)
+                                    containerColor = if (delegateLiveActive) palette.warnRose else palette.passEmerald,
+                                    contentColor = Color.White
                                 )
                             ) {
                                 Icon(
@@ -521,7 +627,7 @@ fun AiMentorScreen(
 
                         voice.voiceError?.let { vErr ->
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(vErr, style = MaterialTheme.typography.bodySmall, color = WarnRose)
+                            Text(vErr, style = MaterialTheme.typography.bodySmall, color = palette.warnRose)
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))
@@ -547,13 +653,13 @@ fun AiMentorScreen(
                                     .size(50.dp)
                                     .testTag("ai_delegate_mic_btn"),
                                 shape = RoundedCornerShape(14.dp),
-                                color = if (voice.isListening && !delegateLiveActive) WarnRose else SlateSurfaceElevated,
-                                border = BorderStroke(1.dp, if (voice.isListening) WarnRose else ArcCyan.copy(alpha = 0.45f))
+                                color = if (voice.isListening && !delegateLiveActive) palette.warnRose else palette.surfaceElevated,
+                                border = BorderStroke(1.dp, if (voice.isListening) palette.warnRose else palette.arcCyan.copy(alpha = 0.45f))
                             ) {
                                 Icon(
                                     imageVector = if (voice.isListening) Icons.Filled.Stop else Icons.Filled.Mic,
                                     contentDescription = AppStrings.voiceSpeakAnswer.get(lang),
-                                    tint = if (voice.isListening) Color.White else ArcCyan,
+                                    tint = if (voice.isListening) Color.White else palette.arcCyan,
                                     modifier = Modifier.padding(13.dp)
                                 )
                             }
@@ -565,7 +671,7 @@ fun AiMentorScreen(
                                     Text(
                                         text = if (voice.isListening && voice.partialTranscript.isNotBlank()) voice.partialTranscript
                                         else AppStrings.delegateAnswerHint.get(lang),
-                                        color = if (voice.isListening) ArcCyan else TextMuted
+                                        color = if (voice.isListening) palette.arcCyan else palette.textMuted
                                     )
                                 },
                                 modifier = Modifier
@@ -593,10 +699,17 @@ fun AiMentorScreen(
                                     .weight(1f)
                                     .height(48.dp)
                                     .testTag("ai_delegate_submit_btn"),
-                                colors = ButtonDefaults.buttonColors(containerColor = ArcCyan, contentColor = Color(0xFF04131E))
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                )
                             ) {
                                 if (delegateState.isEvaluating) {
-                                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Color(0xFF04131E))
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                    )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(AppStrings.delegateEvaluating.get(lang))
                                 } else {
@@ -612,17 +725,17 @@ fun AiMentorScreen(
                                 modifier = Modifier
                                     .height(48.dp)
                                     .testTag("ai_delegate_next_btn"),
-                                border = BorderStroke(1.dp, GlassBorder)
+                                border = BorderStroke(1.dp, palette.glassBorder)
                             ) {
-                                Text(AppStrings.nextQuestion.get(lang), color = TextPrimary)
+                                Text(AppStrings.nextQuestion.get(lang), color = palette.textPrimary)
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp), tint = TextPrimary)
+                                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp), tint = palette.textPrimary)
                             }
                         }
 
                         AnimatedVisibility(visible = delegateState.lastFeedback != null) {
                             val passed = delegateState.lastPassed == true
-                            val badgeCol = if (passed) PassEmerald else MoltenAmber
+                            val badgeCol = if (passed) palette.passEmerald else palette.moltenAmber
                             Surface(
                                 shape = RoundedCornerShape(14.dp),
                                 color = badgeCol.copy(alpha = 0.14f),
@@ -640,7 +753,7 @@ fun AiMentorScreen(
                                     Text(
                                         text = delegateState.lastFeedback.orEmpty(),
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = TextPrimary
+                                        color = palette.textPrimary
                                     )
                                 }
                             }
@@ -653,16 +766,15 @@ fun AiMentorScreen(
                             .fillMaxWidth()
                             .height(48.dp)
                             .testTag("ai_delegate_open_viva_btn"),
-                        border = BorderStroke(1.dp, VioletSpark.copy(alpha = 0.5f))
+                        border = BorderStroke(1.dp, palette.violetSpark.copy(alpha = 0.5f))
                     ) {
-                        Icon(Icons.Filled.RecordVoiceOver, contentDescription = null, tint = VioletSpark, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Filled.RecordVoiceOver, contentDescription = null, tint = palette.violetSpark, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(AppStrings.launchFullVivaDeckBtn.get(lang), color = VioletSpark)
+                        Text(AppStrings.launchFullVivaDeckBtn.get(lang), color = palette.violetSpark)
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                 }
             } else if (!hasKey) {
-                // No API Key View (Delegator Mode above still works offline!)
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -672,23 +784,23 @@ fun AiMentorScreen(
                 ) {
                     GlassCard(
                         modifier = Modifier.fillMaxWidth(),
-                        accentGlow = MoltenAmber,
+                        accentGlow = palette.moltenAmber,
                         contentPadding = 22.dp
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                            Icon(Icons.Filled.Key, contentDescription = null, tint = MoltenAmber, modifier = Modifier.size(44.dp))
+                            Icon(Icons.Filled.Key, contentDescription = null, tint = palette.moltenAmber, modifier = Modifier.size(44.dp))
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
                                 text = AppStrings.aiNoKeyTitle.get(lang),
                                 style = MaterialTheme.typography.titleMedium,
-                                color = TextPrimary,
+                                color = palette.textPrimary,
                                 textAlign = TextAlign.Center
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = AppStrings.aiNoKeyDesc.get(lang),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = TextSecondary,
+                                color = palette.textSecondary,
                                 textAlign = TextAlign.Center
                             )
                             Spacer(modifier = Modifier.height(16.dp))
@@ -696,42 +808,45 @@ fun AiMentorScreen(
                                 Button(
                                     onClick = onOpenSettings,
                                     modifier = Modifier.testTag("configure_api_key_btn"),
-                                    colors = ButtonDefaults.buttonColors(containerColor = ArcCyan, contentColor = Color(0xFF04131E))
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary
+                                    )
                                 ) {
                                     Text(AppStrings.openSettingsBtn.get(lang))
                                 }
                                 OutlinedButton(
                                     onClick = { isDelegatorSession = true },
-                                    border = BorderStroke(1.dp, VioletSpark.copy(alpha = 0.5f))
+                                    border = BorderStroke(1.dp, palette.violetSpark.copy(alpha = 0.5f))
                                 ) {
-                                    Text(AppStrings.aiModeDelegatorLabel.get(lang), color = VioletSpark)
+                                    Text(AppStrings.aiModeDelegatorLabel.get(lang), color = palette.violetSpark)
                                 }
                             }
                         }
                     }
                 }
             } else {
-                // Full AI Chat Mentor + Dual Voice Mode
+                // Full AI Chat Mentor + Dual Voice Mode + Orb Barge-In
                 Column(modifier = Modifier.fillMaxSize()) {
                     if (!isOnline) {
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = WarnRose.copy(alpha = 0.16f),
-                            border = BorderStroke(1.dp, WarnRose.copy(alpha = 0.45f)),
+                            color = palette.warnRose.copy(alpha = 0.14f),
+                            border = BorderStroke(1.dp, palette.warnRose.copy(alpha = 0.45f)),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 2.dp)
                         ) {
                             Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.CloudOff, contentDescription = null, tint = WarnRose, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Filled.CloudOff, contentDescription = null, tint = palette.warnRose, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(AppStrings.aiOfflineBanner.get(lang), style = MaterialTheme.typography.bodySmall, color = TextPrimary)
+                                Text(AppStrings.aiOfflineBanner.get(lang), style = MaterialTheme.typography.bodySmall, color = palette.textPrimary)
                             }
                         }
                     }
 
                     if (apiKeyStatus is ApiKeyStatus.Invalid || apiKeyStatus is ApiKeyStatus.QuotaLimited) {
-                        val alertColor = if (apiKeyStatus is ApiKeyStatus.Invalid) WarnRose else MoltenAmber
+                        val alertColor = if (apiKeyStatus is ApiKeyStatus.Invalid) palette.warnRose else palette.moltenAmber
                         val alertMsg = when (apiKeyStatus) {
                             is ApiKeyStatus.Invalid -> apiKeyStatus.detail
                             is ApiKeyStatus.QuotaLimited -> apiKeyStatus.detail
@@ -754,7 +869,7 @@ fun AiMentorScreen(
                                 Text(
                                     text = alertMsg,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = TextPrimary,
+                                    color = palette.textPrimary,
                                     modifier = Modifier.weight(1f)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
@@ -786,7 +901,7 @@ fun AiMentorScreen(
                                             "Ask anything about welding processes, 1G–6G+, rods, TIG setup, defects, or viva prep:"
                                         },
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = TextSecondary
+                                        color = palette.textSecondary
                                     )
                                 }
                             }
@@ -804,10 +919,10 @@ fun AiMentorScreen(
                                         bottomStart = if (msg.isUser) 16.dp else 4.dp,
                                         bottomEnd = if (msg.isUser) 4.dp else 16.dp
                                     ),
-                                    color = if (msg.isUser) ArcCyan.copy(alpha = 0.22f) else SlateSurfaceElevated,
+                                    color = if (msg.isUser) palette.arcCyan.copy(alpha = 0.18f) else palette.surfaceElevated,
                                     border = BorderStroke(
                                         1.dp,
-                                        if (msg.isUser) ArcCyan.copy(alpha = 0.45f) else GlassBorder
+                                        if (msg.isUser) palette.arcCyan.copy(alpha = 0.45f) else palette.glassBorder
                                     ),
                                     modifier = Modifier.fillMaxWidth(0.88f)
                                 ) {
@@ -815,7 +930,7 @@ fun AiMentorScreen(
                                         Text(
                                             text = msg.text,
                                             style = MaterialTheme.typography.bodyMedium,
-                                            color = TextPrimary
+                                            color = palette.textPrimary
                                         )
                                         if (!msg.isUser) {
                                             Spacer(modifier = Modifier.height(4.dp))
@@ -828,7 +943,7 @@ fun AiMentorScreen(
                                                         if (voice.isSpeaking) voice.stopSpeaking() else voice.speak(msg.text)
                                                     },
                                                     shape = RoundedCornerShape(50),
-                                                    color = ArcCyan.copy(alpha = 0.14f),
+                                                    color = palette.arcCyan.copy(alpha = 0.14f),
                                                     modifier = Modifier.testTag("ai_speak_msg_${msg.id}")
                                                 ) {
                                                     Row(
@@ -838,14 +953,14 @@ fun AiMentorScreen(
                                                         Icon(
                                                             imageVector = if (voice.isSpeaking) Icons.Filled.Stop else Icons.Filled.VolumeUp,
                                                             contentDescription = AppStrings.voiceTapListen.get(lang),
-                                                            tint = ArcCyan,
+                                                            tint = palette.arcCyan,
                                                             modifier = Modifier.size(14.dp)
                                                         )
                                                         Spacer(modifier = Modifier.width(4.dp))
                                                         Text(
                                                             text = if (voice.isSpeaking) AppStrings.voiceStopSpeaking.get(lang) else AppStrings.voiceTapListen.get(lang),
                                                             style = MaterialTheme.typography.labelSmall,
-                                                            color = ArcCyan
+                                                            color = palette.arcCyan
                                                         )
                                                     }
                                                 }
@@ -862,12 +977,12 @@ fun AiMentorScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.padding(vertical = 4.dp)
                                 ) {
-                                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = ArcCyan)
+                                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = palette.arcCyan)
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
                                         text = AppStrings.liveThinkingPrompt.get(lang),
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = TextSecondary
+                                        color = palette.textSecondary
                                     )
                                 }
                             }
@@ -877,11 +992,11 @@ fun AiMentorScreen(
                             item {
                                 Surface(
                                     shape = RoundedCornerShape(12.dp),
-                                    color = WarnRose.copy(alpha = 0.16f),
-                                    border = BorderStroke(1.dp, WarnRose.copy(alpha = 0.45f)),
+                                    color = palette.warnRose.copy(alpha = 0.16f),
+                                    border = BorderStroke(1.dp, palette.warnRose.copy(alpha = 0.45f)),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text(err, style = MaterialTheme.typography.bodySmall, color = WarnRose, modifier = Modifier.padding(10.dp))
+                                    Text(err, style = MaterialTheme.typography.bodySmall, color = palette.warnRose, modifier = Modifier.padding(10.dp))
                                 }
                             }
                         }
@@ -895,7 +1010,7 @@ fun AiMentorScreen(
                         items(STARTER_PROMPTS) { prompt ->
                             SuggestionChip(
                                 onClick = { if (isOnline && !chatState.isLoading) onSendMessage(prompt.get(lang)) },
-                                label = { Text(prompt.get(lang), style = MaterialTheme.typography.bodySmall, color = TextPrimary) }
+                                label = { Text(prompt.get(lang), style = MaterialTheme.typography.bodySmall, color = palette.textPrimary) }
                             )
                         }
                     }
@@ -904,7 +1019,7 @@ fun AiMentorScreen(
                         Text(
                             text = vErr,
                             style = MaterialTheme.typography.bodySmall,
-                            color = WarnRose,
+                            color = palette.warnRose,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                         )
                     }
@@ -949,7 +1064,7 @@ fun AiMentorScreen(
                         Text(
                             text = AppStrings.voiceModeManualDesc.get(lang),
                             style = MaterialTheme.typography.labelSmall,
-                            color = TextSecondary,
+                            color = palette.textSecondary,
                             modifier = Modifier.padding(horizontal = 16.dp)
                         )
                         Row(
@@ -972,13 +1087,13 @@ fun AiMentorScreen(
                                     .size(50.dp)
                                     .testTag("ai_voice_mic_btn"),
                                 shape = RoundedCornerShape(14.dp),
-                                color = if (voice.isListening) WarnRose else SlateSurfaceElevated,
-                                border = BorderStroke(1.dp, if (voice.isListening) WarnRose else ArcCyan.copy(alpha = 0.45f))
+                                color = if (voice.isListening) palette.warnRose else palette.surfaceElevated,
+                                border = BorderStroke(1.dp, if (voice.isListening) palette.warnRose else palette.arcCyan.copy(alpha = 0.45f))
                             ) {
                                 Icon(
                                     imageVector = if (voice.isListening) Icons.Filled.Stop else Icons.Filled.Mic,
                                     contentDescription = if (voice.isListening) AppStrings.voiceListening.get(lang) else AppStrings.voiceSpeakBtn.get(lang),
-                                    tint = if (voice.isListening) Color.White else ArcCyan,
+                                    tint = if (voice.isListening) Color.White else palette.arcCyan,
                                     modifier = Modifier.padding(13.dp)
                                 )
                             }
@@ -993,7 +1108,7 @@ fun AiMentorScreen(
                                             voice.isListening -> AppStrings.voiceListening.get(lang)
                                             else -> AppStrings.aiInputHint.get(lang)
                                         },
-                                        color = if (voice.isListening) ArcCyan else TextMuted
+                                        color = if (voice.isListening) palette.arcCyan else palette.textMuted
                                     )
                                 },
                                 modifier = Modifier
@@ -1014,30 +1129,30 @@ fun AiMentorScreen(
                                     .size(50.dp)
                                     .testTag("ai_chat_send_btn"),
                                 shape = RoundedCornerShape(14.dp),
-                                color = if (input.isNotBlank() && isOnline) ArcCyan else SlateSurfaceElevated
+                                color = if (input.isNotBlank() && isOnline) MaterialTheme.colorScheme.primary else palette.surfaceElevated
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.Send,
                                     contentDescription = "Send",
-                                    tint = if (input.isNotBlank() && isOnline) Color(0xFF04131E) else TextMuted,
+                                    tint = if (input.isNotBlank() && isOnline) MaterialTheme.colorScheme.onPrimary else palette.textMuted,
                                     modifier = Modifier.padding(13.dp)
                                 )
                             }
                         }
                     } else {
                         val phaseColor = when {
-                            !liveSessionActive -> ArcCyan
-                            chatState.isLoading -> MoltenAmber
-                            voice.isSpeaking -> PassEmerald
-                            voice.isListening -> WarnRose
-                            else -> VioletSpark
+                            !liveSessionActive -> palette.arcCyan
+                            chatState.isLoading -> palette.moltenAmber
+                            voice.isSpeaking -> palette.passEmerald
+                            voice.isListening -> palette.warnRose
+                            else -> palette.violetSpark
                         }
                         val phaseMessage = when {
                             !liveSessionActive -> AppStrings.liveTalkReadyDesc.get(lang)
                             voice.partialTranscript.isNotBlank() ->
                                 "${AppStrings.liveHearingPrefix.get(lang)}: \"${voice.partialTranscript}\""
                             chatState.isLoading -> AppStrings.liveThinkingPrompt.get(lang)
-                            voice.isSpeaking -> AppStrings.liveSpeakingPrompt.get(lang)
+                            voice.isSpeaking -> if (bargeInEnabled) AppStrings.orbTapToInterrupt.get(lang) else AppStrings.liveSpeakingPrompt.get(lang)
                             voice.isListening -> AppStrings.liveListeningPrompt.get(lang)
                             else -> AppStrings.liveListeningPrompt.get(lang)
                         }
@@ -1065,7 +1180,7 @@ fun AiMentorScreen(
                                 Text(
                                     text = phaseMessage,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = TextPrimary,
+                                    color = palette.textPrimary,
                                     modifier = Modifier.weight(1f)
                                 )
                             }
@@ -1085,8 +1200,8 @@ fun AiMentorScreen(
                                         .height(50.dp)
                                         .testTag("ai_start_live_talk_btn"),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = PassEmerald,
-                                        contentColor = Color(0xFF022015)
+                                        containerColor = MaterialTheme.colorScheme.tertiary,
+                                        contentColor = MaterialTheme.colorScheme.onTertiary
                                     )
                                 ) {
                                     Icon(Icons.Filled.GraphicEq, contentDescription = null, modifier = Modifier.size(20.dp))
@@ -1094,24 +1209,43 @@ fun AiMentorScreen(
                                     Text(AppStrings.startLiveTalk.get(lang))
                                 }
                             } else {
-                                Button(
-                                    onClick = {
-                                        liveSessionActive = false
-                                        voice.stopListening()
-                                        voice.stopSpeaking()
-                                    },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(50.dp)
-                                        .testTag("ai_stop_live_talk_btn"),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = WarnRose,
-                                        contentColor = Color.White
-                                    )
-                                ) {
-                                    Icon(Icons.Filled.Stop, contentDescription = null, modifier = Modifier.size(20.dp))
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(AppStrings.endLiveTalk.get(lang))
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                    if (voice.isSpeaking && bargeInEnabled) {
+                                        Button(
+                                            onClick = { handleOrbInteraction() },
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(50.dp)
+                                                .testTag("ai_interrupt_barge_in_btn"),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = palette.moltenAmber,
+                                                contentColor = Color.White
+                                            )
+                                        ) {
+                                            Icon(Icons.Filled.Mic, contentDescription = null, modifier = Modifier.size(18.dp))
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(AppStrings.orbTapToInterrupt.get(lang), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        }
+                                    }
+                                    Button(
+                                        onClick = {
+                                            liveSessionActive = false
+                                            voice.stopListening()
+                                            voice.stopSpeaking()
+                                        },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(50.dp)
+                                            .testTag("ai_stop_live_talk_btn"),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = palette.warnRose,
+                                            contentColor = Color.White
+                                        )
+                                    ) {
+                                        Icon(Icons.Filled.Stop, contentDescription = null, modifier = Modifier.size(20.dp))
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(AppStrings.endLiveTalk.get(lang), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    }
                                 }
                             }
                         }

@@ -66,18 +66,9 @@ import com.example.data.content.CurrencyCatalog
 import com.example.data.content.CurrencyInfo
 import com.example.i18n.AppLanguage
 import com.example.i18n.AppStrings
-import com.example.ui.theme.ArcCyan
 import com.example.ui.theme.ArcStatusPill
-import com.example.ui.theme.GlassBorder
 import com.example.ui.theme.GlassCard
-import com.example.ui.theme.MoltenAmber
-import com.example.ui.theme.PassEmerald
-import com.example.ui.theme.SlateSurface
-import com.example.ui.theme.SlateSurfaceElevated
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
-import com.example.ui.theme.VioletSpark
+import com.example.ui.theme.WeldTheme
 import com.example.ui.viewmodel.WeldUiState
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -94,6 +85,7 @@ fun CurrencyConverterScreen(
 ) {
     val prefs = uiState.preferences
     val lang = prefs.language
+    val colors = WeldTheme.colors
 
     var subTab by remember { mutableIntStateOf(0) } // 0 = Converter, 1 = Salary & OT
     var fromCode by remember { mutableStateOf("SAR") }
@@ -176,7 +168,7 @@ fun CurrencyConverterScreen(
         item {
             GlassCard(
                 modifier = Modifier.fillMaxWidth(),
-                accentGlow = if (customPairRate != null) MoltenAmber else ArcCyan,
+                accentGlow = if (customPairRate != null) colors.moltenAmber else colors.arcCyan,
                 contentPadding = 14.dp
             ) {
                 Row(
@@ -190,9 +182,9 @@ fun CurrencyConverterScreen(
                         else -> AppStrings.currencyDefaultOffline.get(lang)
                     }
                     val statusColor = when {
-                        customPairRate != null -> MoltenAmber
-                        hasLiveCache -> PassEmerald
-                        else -> ArcCyan
+                        customPairRate != null -> colors.moltenAmber
+                        hasLiveCache -> colors.passEmerald
+                        else -> colors.arcCyan
                     }
                     ArcStatusPill(
                         text = statusText,
@@ -202,7 +194,7 @@ fun CurrencyConverterScreen(
                     Text(
                         text = "1 $activeFrom = ${formatRate(effectiveRate)} $activeTo",
                         style = MaterialTheme.typography.labelMedium,
-                        color = TextPrimary,
+                        color = colors.textPrimary,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -211,7 +203,7 @@ fun CurrencyConverterScreen(
                 Text(
                     text = lastUpdatedLabel,
                     style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary
+                    color = colors.textSecondary
                 )
                 Spacer(modifier = Modifier.height(10.dp))
 
@@ -226,8 +218,8 @@ fun CurrencyConverterScreen(
                             .weight(1f)
                             .testTag("refresh_live_rates_btn"),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = ArcCyan,
-                            contentColor = Color(0xFF04131E)
+                            containerColor = colors.arcCyan,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         ),
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
                     ) {
@@ -235,7 +227,7 @@ fun CurrencyConverterScreen(
                             CircularProgressIndicator(
                                 modifier = Modifier.size(16.dp),
                                 strokeWidth = 2.dp,
-                                color = Color(0xFF04131E)
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                         } else {
                             Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -255,15 +247,15 @@ fun CurrencyConverterScreen(
                         modifier = Modifier
                             .weight(1f)
                             .testTag("custom_rate_btn"),
-                        border = BorderStroke(1.dp, MoltenAmber.copy(alpha = 0.6f)),
+                        border = BorderStroke(1.dp, colors.moltenAmber.copy(alpha = 0.6f)),
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
                     ) {
-                        Icon(Icons.Filled.Edit, contentDescription = null, tint = MoltenAmber, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Filled.Edit, contentDescription = null, tint = colors.moltenAmber, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = AppStrings.currencyCustomBtn.get(lang),
                             style = MaterialTheme.typography.labelMedium,
-                            color = MoltenAmber,
+                            color = colors.moltenAmber,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -276,7 +268,7 @@ fun CurrencyConverterScreen(
                         onClick = { onSetCustomRate(activeFrom, activeTo, null) },
                         modifier = Modifier.align(Alignment.End)
                     ) {
-                        Text(AppStrings.currencyResetRate.get(lang), color = ArcCyan)
+                        Text(AppStrings.currencyResetRate.get(lang), color = colors.arcCyan)
                     }
                 }
             }
@@ -288,7 +280,7 @@ fun CurrencyConverterScreen(
                 Text(
                     text = AppStrings.currencyPopularLabel.get(lang),
                     style = MaterialTheme.typography.labelLarge,
-                    color = TextSecondary
+                    color = colors.textSecondary
                 )
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(CurrencyCatalog.pinnedWeldingCodes) { code ->
@@ -307,8 +299,8 @@ fun CurrencyConverterScreen(
                             label = { Text("${info.flag} $code") },
                             modifier = Modifier.testTag("quick_currency_$code"),
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = ArcCyan.copy(alpha = 0.24f),
-                                selectedLabelColor = ArcCyan
+                                selectedContainerColor = colors.arcCyan.copy(alpha = 0.2f),
+                                selectedLabelColor = colors.arcCyan
                             )
                         )
                     }
@@ -326,7 +318,7 @@ fun CurrencyConverterScreen(
             item {
                 GlassCard(
                     modifier = Modifier.fillMaxWidth(),
-                    borderColor = ArcCyan.copy(alpha = 0.35f),
+                    borderColor = colors.arcCyan.copy(alpha = 0.35f),
                     contentPadding = 16.dp
                 ) {
                     OutlinedTextField(
@@ -337,7 +329,7 @@ fun CurrencyConverterScreen(
                             }
                         },
                         label = { Text(AppStrings.currencyAmountLabel.get(lang)) },
-                        prefix = { Text("${fromInfo.symbol} ", color = ArcCyan) },
+                        prefix = { Text("${fromInfo.symbol} ", color = colors.arcCyan) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true,
                         modifier = Modifier
@@ -382,13 +374,13 @@ fun CurrencyConverterScreen(
                             },
                             modifier = Modifier.testTag("currency_swap_btn"),
                             shape = RoundedCornerShape(50),
-                            color = ArcCyan.copy(alpha = 0.16f),
-                            border = BorderStroke(1.dp, ArcCyan.copy(alpha = 0.45f))
+                            color = colors.arcCyan.copy(alpha = 0.16f),
+                            border = BorderStroke(1.dp, colors.arcCyan.copy(alpha = 0.45f))
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.SwapVert,
                                 contentDescription = "Swap currencies",
-                                tint = ArcCyan,
+                                tint = colors.arcCyan,
                                 modifier = Modifier.padding(10.dp)
                             )
                         }
@@ -408,28 +400,28 @@ fun CurrencyConverterScreen(
                     // Converted Output Card
                     Surface(
                         shape = RoundedCornerShape(16.dp),
-                        color = PassEmerald.copy(alpha = 0.14f),
-                        border = BorderStroke(1.dp, PassEmerald.copy(alpha = 0.45f)),
+                        color = colors.passEmerald.copy(alpha = 0.14f),
+                        border = BorderStroke(1.dp, colors.passEmerald.copy(alpha = 0.45f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
                                 text = "${formatMoney(amountVal)} ${fromInfo.code} (${fromInfo.name.get(lang)}) =",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = TextSecondary
+                                color = colors.textSecondary
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "${toInfo.symbol} ${formatMoney(convertedVal)} ${toInfo.code}",
                                 style = MaterialTheme.typography.displaySmall,
-                                color = PassEmerald,
+                                color = colors.passEmerald,
                                 modifier = Modifier.testTag("currency_converted_output")
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "${toInfo.flag} ${toInfo.name.get(lang)} • ${toInfo.country.get(lang)}",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = TextPrimary
+                                color = colors.textPrimary
                             )
                         }
                     }
@@ -455,7 +447,7 @@ fun CurrencyConverterScreen(
             item {
                 GlassCard(
                     modifier = Modifier.fillMaxWidth(),
-                    accentGlow = VioletSpark,
+                    accentGlow = colors.violetSpark,
                     contentPadding = 16.dp
                 ) {
                     CurrencySelectorRow(
@@ -551,15 +543,15 @@ fun CurrencyConverterScreen(
                     // Monthly Breakdown Result Card
                     Surface(
                         shape = RoundedCornerShape(16.dp),
-                        color = PassEmerald.copy(alpha = 0.14f),
-                        border = BorderStroke(1.dp, PassEmerald.copy(alpha = 0.45f)),
+                        color = colors.passEmerald.copy(alpha = 0.14f),
+                        border = BorderStroke(1.dp, colors.passEmerald.copy(alpha = 0.45f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(
                                 text = AppStrings.salaryBreakdownTitle.get(lang),
                                 style = MaterialTheme.typography.titleSmall,
-                                color = ArcCyan
+                                color = colors.arcCyan
                             )
                             SalaryLine(AppStrings.salaryBasicPay.get(lang), "${formatMoney(basic)} ${salaryCurrency.code}")
                             SalaryLine(
@@ -567,7 +559,7 @@ fun CurrencyConverterScreen(
                                 "${formatMoney(otTotal)} ${salaryCurrency.code}"
                             )
                             SalaryLine(AppStrings.salaryAllowancePay.get(lang), "${formatMoney(allowance)} ${salaryCurrency.code}")
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = GlassBorder)
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = colors.glassBorder)
                             SalaryLine(
                                 AppStrings.salaryTotalForeign.get(lang),
                                 "${salaryCurrency.symbol} ${formatMoney(totalForeign)} ${salaryCurrency.code}"
@@ -576,12 +568,12 @@ fun CurrencyConverterScreen(
                             Text(
                                 text = AppStrings.salaryTotalBdt.get(lang),
                                 style = MaterialTheme.typography.labelLarge,
-                                color = TextSecondary
+                                color = colors.textSecondary
                             )
                             Text(
                                 text = "${bdtInfo.symbol} ${formatMoney(totalBdt)} BDT",
                                 style = MaterialTheme.typography.displaySmall,
-                                color = PassEmerald,
+                                color = colors.passEmerald,
                                 modifier = Modifier.testTag("salary_total_bdt_output")
                             )
                         }
@@ -636,14 +628,15 @@ private fun CurrencySelectorRow(
     tag: String,
     onClick: () -> Unit
 ) {
+    val colors = WeldTheme.colors
     Surface(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .testTag(tag),
         shape = RoundedCornerShape(14.dp),
-        color = SlateSurfaceElevated.copy(alpha = 0.78f),
-        border = BorderStroke(1.dp, GlassBorder)
+        color = colors.surfaceElevated.copy(alpha = if (colors.isLight) 1f else 0.78f),
+        border = BorderStroke(1.dp, colors.glassBorder)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -655,29 +648,30 @@ private fun CurrencySelectorRow(
                 Text(
                     text = "$label • ${currency.code} (${currency.symbol})",
                     style = MaterialTheme.typography.labelMedium,
-                    color = ArcCyan
+                    color = colors.arcCyan
                 )
                 Text(
                     text = "${currency.name.get(lang)} — ${currency.country.get(lang)}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = TextPrimary,
+                    color = colors.textPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null, tint = TextSecondary)
+            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null, tint = colors.textSecondary)
         }
     }
 }
 
 @Composable
 private fun SalaryLine(label: String, value: String) {
+    val colors = WeldTheme.colors
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-        Text(value, style = MaterialTheme.typography.labelLarge, color = TextPrimary)
+        Text(label, style = MaterialTheme.typography.bodySmall, color = colors.textSecondary)
+        Text(value, style = MaterialTheme.typography.labelLarge, color = colors.textPrimary)
     }
 }
 
@@ -688,6 +682,7 @@ private fun CurrencyPickerDialog(
     onSelect: (CurrencyInfo) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val colors = WeldTheme.colors
     var query by remember { mutableStateOf("") }
     val filtered = remember(query, currencies) {
         val q = query.trim().lowercase()
@@ -704,20 +699,20 @@ private fun CurrencyPickerDialog(
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(22.dp),
-            color = SlateSurface,
-            border = BorderStroke(1.dp, ArcCyan.copy(alpha = 0.4f)),
+            color = colors.surface,
+            border = BorderStroke(1.dp, colors.arcCyan.copy(alpha = 0.4f)),
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = 540.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(AppStrings.currencyPickTitle.get(lang), style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+                Text(AppStrings.currencyPickTitle.get(lang), style = MaterialTheme.typography.titleMedium, color = colors.textPrimary)
                 Spacer(modifier = Modifier.height(10.dp))
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
-                    placeholder = { Text(AppStrings.currencySearchHint.get(lang), color = TextMuted) },
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, tint = ArcCyan) },
+                    placeholder = { Text(AppStrings.currencySearchHint.get(lang), color = colors.textMuted) },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, tint = colors.arcCyan) },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -732,8 +727,8 @@ private fun CurrencyPickerDialog(
                         Surface(
                             onClick = { onSelect(item) },
                             shape = RoundedCornerShape(12.dp),
-                            color = SlateSurfaceElevated.copy(alpha = 0.6f),
-                            border = BorderStroke(1.dp, GlassBorder),
+                            color = colors.surfaceElevated.copy(alpha = if (colors.isLight) 1f else 0.6f),
+                            border = BorderStroke(1.dp, colors.glassBorder),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("currency_pick_${item.code}")
@@ -748,14 +743,14 @@ private fun CurrencyPickerDialog(
                                     Text(
                                         text = "${item.code} (${item.symbol}) — ${item.name.get(lang)}",
                                         style = MaterialTheme.typography.titleSmall,
-                                        color = TextPrimary,
+                                        color = colors.textPrimary,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
                                         text = item.country.get(lang),
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = TextSecondary
+                                        color = colors.textSecondary
                                     )
                                 }
                             }
@@ -764,7 +759,7 @@ private fun CurrencyPickerDialog(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
-                    Text(AppStrings.cancel.get(lang), color = TextSecondary)
+                    Text(AppStrings.cancel.get(lang), color = colors.textSecondary)
                 }
             }
         }
@@ -781,17 +776,18 @@ private fun CustomRateDialog(
     onReset: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val colors = WeldTheme.colors
     var rateText by remember { mutableStateOf(formatRate(currentRate)) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = SlateSurface,
+        containerColor = colors.surface,
         title = {
-            Text("${AppStrings.currencyCustomTitle.get(lang)} (1 $fromCode → $toCode)", color = TextPrimary)
+            Text("${AppStrings.currencyCustomTitle.get(lang)} (1 $fromCode → $toCode)", color = colors.textPrimary)
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(AppStrings.currencyCustomHint.get(lang), style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                Text(AppStrings.currencyCustomHint.get(lang), style = MaterialTheme.typography.bodySmall, color = colors.textSecondary)
                 OutlinedTextField(
                     value = rateText,
                     onValueChange = { if (it.isEmpty() || it.matches(Regex("^\\d*\\.?\\d*$"))) rateText = it },
@@ -817,10 +813,10 @@ private fun CustomRateDialog(
         dismissButton = {
             Row {
                 TextButton(onClick = onReset) {
-                    Text(AppStrings.currencyResetRate.get(lang), color = MoltenAmber)
+                    Text(AppStrings.currencyResetRate.get(lang), color = colors.moltenAmber)
                 }
                 TextButton(onClick = onDismiss) {
-                    Text(AppStrings.cancel.get(lang), color = TextSecondary)
+                    Text(AppStrings.cancel.get(lang), color = colors.textSecondary)
                 }
             }
         }

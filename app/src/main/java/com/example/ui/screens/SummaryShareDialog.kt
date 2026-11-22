@@ -47,15 +47,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.i18n.AppStrings
-import com.example.ui.theme.ArcCyan
 import com.example.ui.theme.ArcStatusPill
-import com.example.ui.theme.GlassBorder
 import com.example.ui.theme.GlassCard
-import com.example.ui.theme.MoltenAmber
-import com.example.ui.theme.PassEmerald
-import com.example.ui.theme.SlateSurface
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.WeldTheme
 import com.example.ui.viewmodel.WeldUiState
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -69,6 +63,7 @@ fun SummaryShareDialog(
     val lang = uiState.preferences.language
     val prefs = uiState.preferences
     val metrics = uiState.metrics
+    val colors = WeldTheme.colors
     val positionsStr = metrics.uniquePositions.ifEmpty { listOf("None yet") }.joinToString(", ")
 
     val plainReport = buildString {
@@ -99,8 +94,8 @@ fun SummaryShareDialog(
                 .fillMaxWidth()
                 .padding(16.dp),
             shape = RoundedCornerShape(24.dp),
-            color = SlateSurface,
-            border = BorderStroke(1.dp, ArcCyan.copy(alpha = 0.4f))
+            color = colors.surface,
+            border = BorderStroke(1.dp, colors.arcCyan.copy(alpha = 0.4f))
         ) {
             Column(
                 modifier = Modifier
@@ -114,18 +109,18 @@ fun SummaryShareDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text(AppStrings.shareSummaryTitle.get(lang), style = MaterialTheme.typography.titleMedium, color = TextPrimary)
-                        Text(AppStrings.builtBy.get(lang), style = MaterialTheme.typography.labelSmall, color = ArcCyan)
+                        Text(AppStrings.shareSummaryTitle.get(lang), style = MaterialTheme.typography.titleMedium, color = colors.textPrimary)
+                        Text(AppStrings.builtBy.get(lang), style = MaterialTheme.typography.labelSmall, color = colors.arcCyan)
                     }
                     IconButton(onClick = onDismiss, modifier = Modifier.testTag("close_summary_dialog_btn")) {
-                        Icon(Icons.Filled.Close, contentDescription = AppStrings.cancel.get(lang), tint = TextPrimary)
+                        Icon(Icons.Filled.Close, contentDescription = AppStrings.cancel.get(lang), tint = colors.textPrimary)
                     }
                 }
 
-                GlassCard(modifier = Modifier.fillMaxWidth(), accentGlow = ArcCyan, contentPadding = 14.dp) {
-                    Text(prefs.traineeName, style = MaterialTheme.typography.headlineSmall, color = TextPrimary)
-                    Text(prefs.targetTrade, style = MaterialTheme.typography.bodySmall, color = ArcCyan)
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = GlassBorder)
+                GlassCard(modifier = Modifier.fillMaxWidth(), accentGlow = colors.arcCyan, contentPadding = 14.dp) {
+                    Text(prefs.traineeName, style = MaterialTheme.typography.headlineSmall, color = colors.textPrimary)
+                    Text(prefs.targetTrade, style = MaterialTheme.typography.bodySmall, color = colors.arcCyan)
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = colors.glassBorder)
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         SummaryStat("Jobs", "${metrics.totalJobs}")
                         SummaryStat("Pass Rate", "${metrics.passRatePct}%")
@@ -133,14 +128,14 @@ fun SummaryShareDialog(
                         SummaryStat("Streak", "${prefs.streakDays}d")
                     }
                     Spacer(modifier = Modifier.height(10.dp))
-                    Text(AppStrings.positionsMastered.get(lang), style = MaterialTheme.typography.labelLarge, color = TextSecondary)
+                    Text(AppStrings.positionsMastered.get(lang), style = MaterialTheme.typography.labelLarge, color = colors.textSecondary)
                     Spacer(modifier = Modifier.height(6.dp))
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         if (metrics.uniquePositions.isEmpty()) {
-                            ArcStatusPill(text = "1G–6G+ Ready", color = MoltenAmber)
+                            ArcStatusPill(text = "1G–6G+ Ready", color = colors.moltenAmber)
                         } else {
                             metrics.uniquePositions.forEach { pos ->
-                                ArcStatusPill(text = pos, color = PassEmerald)
+                                ArcStatusPill(text = pos, color = colors.passEmerald)
                             }
                         }
                     }
@@ -148,12 +143,12 @@ fun SummaryShareDialog(
 
                 if (uiState.jobs.isNotEmpty()) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Recent Welding Jobs", style = MaterialTheme.typography.labelLarge, color = TextSecondary)
+                        Text("Recent Welding Jobs", style = MaterialTheme.typography.labelLarge, color = colors.textSecondary)
                         uiState.jobs.take(5).forEach { j ->
                             Text(
                                 text = "• ${j.date} | ${j.process} ${j.position} (${j.rodFillerAndSize}) — ${j.status}",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = TextPrimary
+                                color = colors.textPrimary
                             )
                         }
                     }
@@ -170,11 +165,11 @@ fun SummaryShareDialog(
                             onShowMessage(AppStrings.copiedFeedback.get(lang))
                         },
                         modifier = Modifier.weight(1f).testTag("summary_copy_btn"),
-                        border = BorderStroke(1.dp, ArcCyan.copy(alpha = 0.5f))
+                        border = BorderStroke(1.dp, colors.arcCyan.copy(alpha = 0.5f))
                     ) {
-                        Icon(Icons.Filled.ContentCopy, contentDescription = null, tint = ArcCyan, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Filled.ContentCopy, contentDescription = null, tint = colors.arcCyan, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(AppStrings.copyReport.get(lang), color = ArcCyan, style = MaterialTheme.typography.labelMedium)
+                        Text(AppStrings.copyReport.get(lang), color = colors.arcCyan, style = MaterialTheme.typography.labelMedium)
                     }
 
                     OutlinedButton(
@@ -187,18 +182,21 @@ fun SummaryShareDialog(
                             context.startActivity(Intent.createChooser(sendIntent, AppStrings.shareReport.get(lang)))
                         },
                         modifier = Modifier.weight(1f).testTag("summary_share_btn"),
-                        border = BorderStroke(1.dp, PassEmerald.copy(alpha = 0.5f))
+                        border = BorderStroke(1.dp, colors.passEmerald.copy(alpha = 0.5f))
                     ) {
-                        Icon(Icons.Filled.Share, contentDescription = null, tint = PassEmerald, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Filled.Share, contentDescription = null, tint = colors.passEmerald, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(AppStrings.shareReport.get(lang), color = PassEmerald, style = MaterialTheme.typography.labelMedium)
+                        Text(AppStrings.shareReport.get(lang), color = colors.passEmerald, style = MaterialTheme.typography.labelMedium)
                     }
                 }
 
                 Button(
                     onClick = { printHtmlSummary(context, prefs.traineeName, prefs.targetTrade, plainReport) },
                     modifier = Modifier.fillMaxWidth().testTag("summary_print_btn"),
-                    colors = ButtonDefaults.buttonColors(containerColor = ArcCyan, contentColor = Color(0xFF04131E))
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = colors.arcCyan,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 ) {
                     Icon(Icons.Filled.Print, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
@@ -211,9 +209,10 @@ fun SummaryShareDialog(
 
 @Composable
 private fun SummaryStat(label: String, value: String) {
+    val colors = WeldTheme.colors
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = MaterialTheme.typography.titleMedium, color = ArcCyan)
-        Text(label, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+        Text(value, style = MaterialTheme.typography.titleMedium, color = colors.arcCyan)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = colors.textSecondary)
     }
 }
 

@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.AudioAttributes
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -25,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import com.example.data.local.SpeechSpeedPreset
 import com.example.i18n.AppLanguage
 import com.example.i18n.AppStrings
 import java.util.Locale
@@ -51,12 +53,18 @@ class VoiceAssistantController(
     var partialTranscript by mutableStateOf("")
         private set
 
+    var hasAudioPermission by mutableStateOf(checkAudioPermission(context))
+        private set
+
     private var currentLanguage: AppLanguage = AppLanguage.EN
+    private var currentSpeedPreset: SpeechSpeedPreset = SpeechSpeedPreset.NATURAL
     private var pendingSpeechRequest: PendingSpeechRequest? = null
     private var speechRecognizer: SpeechRecognizer? = null
     private var tts: TextToSpeech? = null
     private var activeFinalUtteranceId: String? = null
     private var activeOnSpeakComplete: (() -> Unit)? = null
+    private var speechGeneration: Long = 0L
+    private var listenGeneration: Long = 0L
 
     private data class PendingSpeechRequest(
         val silentTimeoutFallback: Boolean,
@@ -68,16 +76,33 @@ class VoiceAssistantController(
         initTts()
     }
 
+    fun refreshPermissionState() {
+        hasAudioPermission = checkAudioPermission(context)
+    }
+
     private fun initTts() {
         try {
             tts = TextToSpeech(context.applicationContext) { status ->
                 mainHandler.post {
                     if (status == TextToSpeech.SUCCESS) {
                         ttsReady = true
-                        applyNaturalTtsVoice(currentLanguage)
+                        try {
+                            tts?.setAudioAttributes(
+                                AudioAttributes.Builder()
+                                    .setUsage(AudioAttributes.USAGE_ASSISTANT)
+                                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                                    .build()
+                            )
+                        } catch (_: Exception) {
+                        }
+                        applyNaturalTtsVoice(currentLanguage, currentSpeedPreset)
                         tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                             override fun onStart(utteranceId: String?) {
-                                mainHandler.post { isSpeaking = true }
+                                mainHandler.post {
+                                    if (utteranceId?.startsWith("weld_${speechGeneration}_") == true) {
+                                        isSpeaking = true
+                                    }
+                                }
                             }
 
                             override fun onDone(utteranceId: String?) {
@@ -95,17 +120,21 @@ class VoiceAssistantController(
                             @Deprecated("Deprecated in Java")
                             override fun onError(utteranceId: String?) {
                                 mainHandler.post {
-                                    isSpeaking = false
-                                    activeOnSpeakComplete = null
-                                    activeFinalUtteranceId = null
+                                    if (utteranceId == null || utteranceId.startsWith("weld_${speechGeneration}_")) {
+                                        isSpeaking = false
+                                        activeOnSpeakComplete = null
+                                        activeFinalUtteranceId = null
+                                    }
                                 }
                             }
 
                             override fun onError(utteranceId: String?, errorCode: Int) {
                                 mainHandler.post {
-                                    isSpeaking = false
-                                    activeOnSpeakComplete = null
-                                    activeFinalUtteranceId = null
+                                    if (utteranceId == null || utteranceId.startsWith("weld_${speechGeneration}_")) {
+                                        isSpeaking = false
+                                        activeOnSpeakComplete = null
+                                        activeFinalUtteranceId = null
+                                    }
                                 }
                             }
                         })
@@ -119,14 +148,19 @@ class VoiceAssistantController(
         }
     }
 
-    fun updateLanguage(language: AppLanguage) {
+    fun updateSettings(language: AppLanguage, speedPreset: SpeechSpeedPreset = currentSpeedPreset) {
         currentLanguage = language
+        currentSpeedPreset = speedPreset
         if (ttsReady) {
-            applyNaturalTtsVoice(language)
+            applyNaturalTtsVoice(language, speedPreset)
         }
     }
 
-    private fun applyNaturalTtsVoice(language: AppLanguage) {
+    fun updateLanguage(language: AppLanguage) {
+        updateSettings(language, currentSpeedPreset)
+    }
+
+    private fun applyNaturalTtsVoice(language: AppLanguage, speedPreset: SpeechSpeedPreset) {
         val engine = tts ?: return
         val primaryLocale = if (language == AppLanguage.BN) Locale("bn", "BD") else Locale.US
         val secondaryLocale = if (language == AppLanguage.BN) Locale("bn", "IN") else Locale.UK
@@ -144,9 +178,14 @@ class VoiceAssistantController(
             }
         }
 
-        // Measured, warm cadence prevents choppy or rushed robotic delivery
-        engine.setSpeechRate(if (language == AppLanguage.BN) 0.94f else 0.97f)
-        engine.setPitch(1.01f)
+        // Smooth conversational cadence prevents chopped or syllable-by-syllable delivery
+        val rate = if (language == AppLanguage.BN) {
+            (speedPreset.rateMultiplier - 0.03f).coerceIn(0.82f, 1.15f)
+        } else {
+            speedPreset.rateMultiplier
+        }
+        engine.setSpeechRate(rate)
+        engine.setPitch(1.0f)
     }
 
     private fun selectBestNaturalVoice(
@@ -166,11 +205,11 @@ class VoiceAssistantController(
                 .maxByOrNull { v ->
                     var score = 0
                     if (v.locale == primaryLocale) score += 200
-                    else if (v.locale == secondaryLocale) score += 120
-                    if (v.quality >= Voice.QUALITY_VERY_HIGH) score += 105
-                    else if (v.quality >= Voice.QUALITY_HIGH) score += 70
-                    else if (v.quality >= Voice.QUALITY_NORMAL) score += 25
-                    if (!v.isNetworkConnectionRequired) score += 25
+                    else if (v.locale == secondaryLocale) score += 130
+                    if (v.quality >= Voice.QUALITY_VERY_HIGH) score += 120
+                    else if (v.quality >= Voice.QUALITY_HIGH) score += 80
+                    else if (v.quality >= Voice.QUALITY_NORMAL) score += 30
+                    if (!v.isNetworkConnectionRequired) score += 20
                     if (v.latency <= Voice.LATENCY_NORMAL) score += 15
                     score
                 }
@@ -186,11 +225,14 @@ class VoiceAssistantController(
             return
         }
         voiceError = null
-        applyNaturalTtsVoice(currentLanguage)
+        applyNaturalTtsVoice(currentLanguage, currentSpeedPreset)
 
-        val batchPrefix = "weld_${System.currentTimeMillis()}"
+        speechGeneration += 1L
+        val gen = speechGeneration
+        val batchPrefix = "weld_${gen}"
         activeOnSpeakComplete = onComplete
         activeFinalUtteranceId = "${batchPrefix}_${segments.lastIndex}"
+        isSpeaking = true
 
         segments.forEachIndexed { idx, clause ->
             val mode = if (idx == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD
@@ -200,10 +242,30 @@ class VoiceAssistantController(
     }
 
     fun stopSpeaking() {
+        speechGeneration += 1L
         activeOnSpeakComplete = null
         activeFinalUtteranceId = null
-        tts?.stop()
+        try {
+            tts?.stop()
+        } catch (_: Exception) {
+        }
         isSpeaking = false
+    }
+
+    /**
+     * Barge-in / Tap-to-interrupt: halts AI TTS playback immediately and transitions cleanly to listening.
+     */
+    fun interruptAndListen(
+        silentTimeoutFallback: Boolean = true,
+        onNoSpeech: (() -> Unit)? = null,
+        onResult: (String) -> Unit
+    ) {
+        stopSpeaking()
+        startListening(
+            silentTimeoutFallback = silentTimeoutFallback,
+            onNoSpeech = onNoSpeech,
+            onResult = onResult
+        )
     }
 
     fun startListening(
@@ -214,13 +276,9 @@ class VoiceAssistantController(
         voiceError = null
         partialTranscript = ""
         stopSpeaking()
+        refreshPermissionState()
 
-        val hasPermission = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.RECORD_AUDIO
-        ) == PackageManager.PERMISSION_GRANTED
-
-        if (!hasPermission) {
+        if (!hasAudioPermission) {
             pendingSpeechRequest = PendingSpeechRequest(silentTimeoutFallback, onNoSpeech, onResult)
             requestAudioPermission()
             return
@@ -230,6 +288,7 @@ class VoiceAssistantController(
     }
 
     internal fun onPermissionResult(granted: Boolean) {
+        hasAudioPermission = granted
         val pending = pendingSpeechRequest
         pendingSpeechRequest = null
         if (granted) {
@@ -256,6 +315,9 @@ class VoiceAssistantController(
             return
         }
 
+        listenGeneration += 1L
+        val activeGen = listenGeneration
+
         try {
             speechRecognizer?.destroy()
             val recognizer = SpeechRecognizer.createSpeechRecognizer(context)
@@ -263,6 +325,7 @@ class VoiceAssistantController(
 
             recognizer.setRecognitionListener(object : RecognitionListener {
                 override fun onReadyForSpeech(params: Bundle?) {
+                    if (activeGen != listenGeneration) return
                     isListening = true
                     voiceError = null
                 }
@@ -272,10 +335,12 @@ class VoiceAssistantController(
                 override fun onBufferReceived(buffer: ByteArray?) {}
 
                 override fun onEndOfSpeech() {
+                    if (activeGen != listenGeneration) return
                     isListening = false
                 }
 
                 override fun onError(error: Int) {
+                    if (activeGen != listenGeneration) return
                     isListening = false
                     partialTranscript = ""
                     val isSoftRetry = error == SpeechRecognizer.ERROR_NO_MATCH ||
@@ -290,6 +355,7 @@ class VoiceAssistantController(
                 }
 
                 override fun onResults(results: Bundle?) {
+                    if (activeGen != listenGeneration) return
                     isListening = false
                     partialTranscript = ""
                     val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
@@ -302,6 +368,7 @@ class VoiceAssistantController(
                 }
 
                 override fun onPartialResults(partialResults: Bundle?) {
+                    if (activeGen != listenGeneration) return
                     val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     val live = matches?.firstOrNull()?.trim().orEmpty()
                     if (live.isNotBlank()) {
@@ -332,6 +399,7 @@ class VoiceAssistantController(
     }
 
     fun stopListening() {
+        listenGeneration += 1L
         try {
             speechRecognizer?.stopListening()
             speechRecognizer?.cancel()
@@ -375,6 +443,8 @@ class VoiceAssistantController(
     }
 
     fun release() {
+        speechGeneration += 1L
+        listenGeneration += 1L
         activeOnSpeakComplete = null
         activeFinalUtteranceId = null
         try {
@@ -393,6 +463,13 @@ class VoiceAssistantController(
     }
 
     companion object {
+        fun checkAudioPermission(context: Context): Boolean {
+            return ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+
         internal fun prepareNaturalSpeechSegments(rawText: String, language: AppLanguage): List<String> {
             val orConnector = if (language == AppLanguage.BN) " বা " else " or "
             val toConnector = if (language == AppLanguage.BN) " থেকে " else " to "
@@ -404,6 +481,7 @@ class VoiceAssistantController(
             val cleaned = rawText
                 .replace(Regex("```[\\s\\S]*?```"), " ")
                 .replace(Regex("\\[(PASS|REVIEW)]", RegexOption.IGNORE_CASE), "")
+                .replace(Regex("(?:(?m)^|(?<=[.!?।]\\s))\\s*(?:[-*•]+|\\d+[.)])\\s+"), "")
                 .replace(Regex("[*_`#>|]"), " ")
                 .replace("~", approxWord)
                 .replace("°", degreeWord)
@@ -413,7 +491,7 @@ class VoiceAssistantController(
                 .replace(Regex("(\\d+)\\s*[–-]\\s*(\\d+)"), "$1$toConnector$2")
                 .replace(Regex("([A-Za-z0-9]+)/([A-Za-z0-9]+)"), "$1$orConnector$2")
                 .replace("•", ", ")
-                .replace(Regex("\\r?\\n+"), ". ")
+                .replace(Regex("\\r?\\n+"), ", ")
                 .replace(Regex("\\s{2,}"), " ")
                 .trim()
 
@@ -424,12 +502,13 @@ class VoiceAssistantController(
                 .map { it.trim().trimStart('.', ',', ';') }
                 .filter { it.isNotBlank() }
 
+            // Merge consecutive clauses up to ~360 characters to keep spoken flow cohesive and avoid robotic stops
             val merged = mutableListOf<String>()
             val current = StringBuilder()
             for (sentence in rawSentences) {
                 if (current.isEmpty()) {
                     current.append(sentence)
-                } else if (current.length + sentence.length + 1 <= 240) {
+                } else if (current.length + sentence.length + 1 <= 360) {
                     current.append(' ').append(sentence)
                 } else {
                     merged.add(current.toString())
@@ -446,7 +525,10 @@ class VoiceAssistantController(
 }
 
 @Composable
-fun rememberVoiceAssistantController(language: AppLanguage): VoiceAssistantController {
+fun rememberVoiceAssistantController(
+    language: AppLanguage,
+    speedPreset: SpeechSpeedPreset = SpeechSpeedPreset.NATURAL
+): VoiceAssistantController {
     val context = LocalContext.current
     var controllerRef by remember { mutableStateOf<VoiceAssistantController?>(null) }
 
@@ -465,8 +547,8 @@ fun rememberVoiceAssistantController(language: AppLanguage): VoiceAssistantContr
         ).also { controllerRef = it }
     }
 
-    LaunchedEffect(language) {
-        controller.updateLanguage(language)
+    LaunchedEffect(language, speedPreset) {
+        controller.updateSettings(language, speedPreset)
     }
 
     DisposableEffect(controller) {

@@ -317,6 +317,30 @@ class WeldMentorViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch { repository.setLanguage(language) }
     }
 
+    fun setThemeMode(mode: com.example.data.local.AppThemeMode) {
+        viewModelScope.launch { repository.setThemeMode(mode) }
+    }
+
+    fun toggleThemeMode() {
+        val current = uiState.value.preferences.themeMode
+        val next = if (current == com.example.data.local.AppThemeMode.DARK) {
+            com.example.data.local.AppThemeMode.LIGHT
+        } else {
+            com.example.data.local.AppThemeMode.DARK
+        }
+        viewModelScope.launch { repository.setThemeMode(next) }
+    }
+
+    fun setVoiceSettings(
+        autoSpeakAi: Boolean? = null,
+        bargeInEnabled: Boolean? = null,
+        speechSpeedPreset: com.example.data.local.SpeechSpeedPreset? = null
+    ) {
+        viewModelScope.launch {
+            repository.setVoiceSettings(autoSpeakAi, bargeInEnabled, speechSpeedPreset)
+        }
+    }
+
     fun updateLogFilter(transform: (LogbookFilter) -> LogbookFilter) {
         _logFilter.update(transform)
     }

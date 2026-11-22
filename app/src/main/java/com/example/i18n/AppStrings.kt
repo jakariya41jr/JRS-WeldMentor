@@ -264,4 +264,39 @@ object AppStrings {
     val aiModeDelegatorLabel = BiText("Delegator Mode", "ডেলিগেটর মোড")
     val launchFullVivaDeckBtn = BiText("Open Viva Cards", "ভাইভা কার্ড খুলুন")
     val liveHearingPrefix = BiText("Hearing", "শুনছি")
+
+    // Central Energy Orb Status & Barge-In Interrupt Cues
+    val orbTapToStart = BiText("TAP TO START", "শুরু করতে ট্যাপ করুন")
+    val orbListening = BiText("LISTENING...", "শুনছি...")
+    val orbThinking = BiText("THINKING...", "চিন্তা করছি...")
+    val orbSpeaking = BiText("SPEAKING...", "বলছি...")
+    val orbTapToInterrupt = BiText("Tap to interrupt", "থামিয়ে কথা বলতে ট্যাপ করুন")
+    val orbTapToStop = BiText("Tap to stop", "থামাতে ট্যাপ করুন")
+
+    // Appearance, Voice & Permissions Settings
+    val appearanceSection = BiText("Appearance & Theme", "থিম ও ডিজাইন")
+    val themeDarkGlass = BiText("Dark Glassmorphism", "ডার্ক গ্লাস")
+    val themeLightGlass = BiText("Clean Light Glass", "ক্লিন লাইট গ্লাস")
+    val intelligenceSection = BiText("Intelligence & Live Model", "ইন্টেলিজেন্স ও লাইভ মডেল")
+    val voiceControlsSection = BiText("Voice, Barge-In & Permissions", "ভয়েস, ইন্টারাপ্ট ও অনুমতি")
+    val bargeInTitle = BiText("Tap-to-Interrupt (Barge-In)", "ট্যাপ-টু-ইন্টারাপ্ট (বার্জ-ইন)")
+    val bargeInDesc = BiText(
+        "Interrupt AI while it is speaking to ask or answer immediately",
+        "AI কথা বলার সময়ই থামিয়ে সাথে সাথে নিজের কথা বলুন"
+    )
+    val autoSpeakDesc = BiText(
+        "Automatically read AI & examiner feedback aloud",
+        "AI ও পরীক্ষকের উত্তর স্বয়ংক্রিয়ভাবে পড়ে শোনাবে"
+    )
+    val voiceCadenceLabel = BiText("Voice Cadence", "ভয়েস গতি")
+    val speedRelaxed = BiText("Relaxed", "ধীর ও স্পষ্ট")
+    val speedNatural = BiText("Natural", "স্বাভাবিক")
+    val speedCrisp = BiText("Crisp", "দ্রুত")
+    val micPermissionLabel = BiText("Microphone Access", "মাইক্রোফোন অনুমতি")
+    val permGranted = BiText("Granted", "অনুমতি আছে")
+    val permGrantBtn = BiText("Grant Mic", "অনুমতি দিন")
+    val ttsStatusLabel = BiText("Voice Engine (TTS)", "ভয়েস ইঞ্জিন (TTS)")
+    val ttsEngineReady = BiText("Natural Audio Ready", "অডিও প্রস্তুত")
+    val ttsEngineInit = BiText("Initializing...", "চালু হচ্ছে...")
+    val aboutDevSection = BiText("Developer & Ownership", "ডেভেলপার ও স্বত্ব")
 }

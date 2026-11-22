@@ -53,16 +53,8 @@ import com.example.data.model.WeldPosition
 import com.example.data.model.WeldProcess
 import com.example.i18n.AppLanguage
 import com.example.i18n.AppStrings
-import com.example.ui.theme.ArcCyan
-import com.example.ui.theme.DeepSlateBg
 import com.example.ui.theme.GlassCard
-import com.example.ui.theme.MoltenAmber
-import com.example.ui.theme.PassEmerald
-import com.example.ui.theme.SlateSurface
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
-import com.example.ui.theme.WarnRose
+import com.example.ui.theme.WeldTheme
 
 private val PRESET_RODS = listOf(
     "E6013 3.2mm",
@@ -93,6 +85,7 @@ fun LogbookFormSheet(
     onSave: (WeldJobEntity) -> Unit
 ) {
     BackHandler(onBack = onDismiss)
+    val colors = WeldTheme.colors
 
     var date by remember { mutableStateOf(existingJob?.date ?: PreferencesManager.todayString()) }
     var process by remember { mutableStateOf(existingJob?.process ?: WeldProcess.SMAW.label) }
@@ -130,20 +123,20 @@ fun LogbookFormSheet(
         position.contains("GTAW", ignoreCase = true)
 
     Scaffold(
-        containerColor = DeepSlateBg,
+        containerColor = colors.bg,
         topBar = {
             TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = SlateSurface),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = colors.surface),
                 title = {
                     Text(
                         text = if (existingJob == null) AppStrings.createLog.get(lang) else AppStrings.editLog.get(lang),
                         style = MaterialTheme.typography.titleMedium,
-                        color = TextPrimary
+                        color = colors.textPrimary
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onDismiss, modifier = Modifier.testTag("close_log_form_btn")) {
-                        Icon(Icons.Filled.Close, contentDescription = AppStrings.cancel.get(lang), tint = TextPrimary)
+                        Icon(Icons.Filled.Close, contentDescription = AppStrings.cancel.get(lang), tint = colors.textPrimary)
                     }
                 },
                 actions = {
@@ -177,7 +170,10 @@ fun LogbookFormSheet(
                         modifier = Modifier
                             .padding(end = 8.dp)
                             .testTag("save_log_btn"),
-                        colors = ButtonDefaults.buttonColors(containerColor = ArcCyan, contentColor = Color(0xFF04131E))
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colors.arcCyan,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
                     ) {
                         Text(AppStrings.save.get(lang))
                     }
@@ -203,7 +199,7 @@ fun LogbookFormSheet(
                     singleLine = true
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(AppStrings.processLabel.get(lang), style = MaterialTheme.typography.labelLarge, color = TextSecondary)
+                Text(AppStrings.processLabel.get(lang), style = MaterialTheme.typography.labelLarge, color = colors.textSecondary)
                 Spacer(modifier = Modifier.height(6.dp))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     WeldProcess.entries.forEach { proc ->
@@ -212,8 +208,8 @@ fun LogbookFormSheet(
                             onClick = { process = proc.label },
                             label = { Text(proc.label) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = ArcCyan.copy(alpha = 0.22f),
-                                selectedLabelColor = ArcCyan
+                                selectedContainerColor = colors.arcCyan.copy(alpha = 0.2f),
+                                selectedLabelColor = colors.arcCyan
                             )
                         )
                     }
@@ -222,7 +218,7 @@ fun LogbookFormSheet(
 
             // Position, Material, Joint
             GlassCard(modifier = Modifier.fillMaxWidth()) {
-                Text(AppStrings.positionLabel.get(lang), style = MaterialTheme.typography.labelLarge, color = TextSecondary)
+                Text(AppStrings.positionLabel.get(lang), style = MaterialTheme.typography.labelLarge, color = colors.textSecondary)
                 Spacer(modifier = Modifier.height(6.dp))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     WeldPosition.entries.forEach { pos ->
@@ -231,15 +227,15 @@ fun LogbookFormSheet(
                             onClick = { position = pos.code },
                             label = { Text(pos.code) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MoltenAmber.copy(alpha = 0.22f),
-                                selectedLabelColor = MoltenAmber
+                                selectedContainerColor = colors.moltenAmber.copy(alpha = 0.2f),
+                                selectedLabelColor = colors.moltenAmber
                             )
                         )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(AppStrings.materialLabel.get(lang), style = MaterialTheme.typography.labelLarge, color = TextSecondary)
+                Text(AppStrings.materialLabel.get(lang), style = MaterialTheme.typography.labelLarge, color = colors.textSecondary)
                 Spacer(modifier = Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     BaseMaterial.entries.forEach { mat ->
@@ -248,15 +244,15 @@ fun LogbookFormSheet(
                             onClick = { material = mat.code },
                             label = { Text(mat.bi.get(lang)) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = ArcCyan.copy(alpha = 0.22f),
-                                selectedLabelColor = ArcCyan
+                                selectedContainerColor = colors.arcCyan.copy(alpha = 0.2f),
+                                selectedLabelColor = colors.arcCyan
                             )
                         )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(AppStrings.jointLabel.get(lang), style = MaterialTheme.typography.labelLarge, color = TextSecondary)
+                Text(AppStrings.jointLabel.get(lang), style = MaterialTheme.typography.labelLarge, color = colors.textSecondary)
                 Spacer(modifier = Modifier.height(6.dp))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     JointType.entries.forEach { jt ->
@@ -265,8 +261,8 @@ fun LogbookFormSheet(
                             onClick = { jointType = jt.code },
                             label = { Text(jt.code) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = ArcCyan.copy(alpha = 0.22f),
-                                selectedLabelColor = ArcCyan
+                                selectedContainerColor = colors.arcCyan.copy(alpha = 0.2f),
+                                selectedLabelColor = colors.arcCyan
                             )
                         )
                     }
@@ -275,7 +271,7 @@ fun LogbookFormSheet(
 
             // Rod / Filler & Size
             GlassCard(modifier = Modifier.fillMaxWidth()) {
-                Text(AppStrings.rodFillerLabel.get(lang), style = MaterialTheme.typography.labelLarge, color = TextSecondary)
+                Text(AppStrings.rodFillerLabel.get(lang), style = MaterialTheme.typography.labelLarge, color = colors.textSecondary)
                 Spacer(modifier = Modifier.height(6.dp))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     PRESET_RODS.forEach { preset ->
@@ -290,7 +286,7 @@ fun LogbookFormSheet(
                 OutlinedTextField(
                     value = rodFiller,
                     onValueChange = { rodFiller = it },
-                    placeholder = { Text(AppStrings.rodFillerHint.get(lang), color = TextMuted) },
+                    placeholder = { Text(AppStrings.rodFillerHint.get(lang), color = colors.textMuted) },
                     modifier = Modifier.fillMaxWidth().testTag("form_rod_input"),
                     singleLine = true
                 )
@@ -298,8 +294,8 @@ fun LogbookFormSheet(
 
             // TIG Torch Setup (shown for TIG/GTAW)
             if (showTigSection) {
-                GlassCard(modifier = Modifier.fillMaxWidth(), accentGlow = ArcCyan) {
-                    Text(AppStrings.tigSetupLabel.get(lang), style = MaterialTheme.typography.titleSmall, color = ArcCyan)
+                GlassCard(modifier = Modifier.fillMaxWidth(), accentGlow = colors.arcCyan) {
+                    Text(AppStrings.tigSetupLabel.get(lang), style = MaterialTheme.typography.titleSmall, color = colors.arcCyan)
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(
@@ -318,7 +314,7 @@ fun LogbookFormSheet(
                         )
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(AppStrings.tigBackCapLabel.get(lang), style = MaterialTheme.typography.labelLarge, color = TextSecondary)
+                    Text(AppStrings.tigBackCapLabel.get(lang), style = MaterialTheme.typography.labelLarge, color = colors.textSecondary)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("Long", "Medium", "Short").forEach { cap ->
                             FilterChip(
@@ -341,7 +337,7 @@ fun LogbookFormSheet(
 
             // Machine Settings
             GlassCard(modifier = Modifier.fillMaxWidth()) {
-                Text(AppStrings.machineSettingsLabel.get(lang), style = MaterialTheme.typography.titleSmall, color = TextPrimary)
+                Text(AppStrings.machineSettingsLabel.get(lang), style = MaterialTheme.typography.titleSmall, color = colors.textPrimary)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
@@ -371,7 +367,7 @@ fun LogbookFormSheet(
 
             // Measuring Tools & PPE
             GlassCard(modifier = Modifier.fillMaxWidth()) {
-                Text(AppStrings.measuringToolsLabel.get(lang), style = MaterialTheme.typography.labelLarge, color = TextSecondary)
+                Text(AppStrings.measuringToolsLabel.get(lang), style = MaterialTheme.typography.labelLarge, color = colors.textSecondary)
                 Spacer(modifier = Modifier.height(6.dp))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     MEASURING_TOOLS.forEach { tool ->
@@ -391,18 +387,21 @@ fun LogbookFormSheet(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(AppStrings.ppeChecklistLabel.get(lang), style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
+                    Text(AppStrings.ppeChecklistLabel.get(lang), style = MaterialTheme.typography.bodyMedium, color = colors.textPrimary)
                     Switch(
                         checked = ppeChecked,
                         onCheckedChange = { ppeChecked = it },
-                        colors = SwitchDefaults.colors(checkedThumbColor = PassEmerald, checkedTrackColor = PassEmerald.copy(alpha = 0.35f))
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = colors.passEmerald,
+                            checkedTrackColor = colors.passEmerald.copy(alpha = 0.35f)
+                        )
                     )
                 }
             }
 
             // Defect Tags, Feedback, Status
             GlassCard(modifier = Modifier.fillMaxWidth()) {
-                Text(AppStrings.defectTagsLabel.get(lang), style = MaterialTheme.typography.labelLarge, color = TextSecondary)
+                Text(AppStrings.defectTagsLabel.get(lang), style = MaterialTheme.typography.labelLarge, color = colors.textSecondary)
                 Spacer(modifier = Modifier.height(6.dp))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     DefectTag.entries.forEach { tag ->
@@ -419,8 +418,8 @@ fun LogbookFormSheet(
                             },
                             label = { Text(tag.bi.get(lang), style = MaterialTheme.typography.bodySmall) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = if (tag == DefectTag.CLEAN_PASS) PassEmerald.copy(alpha = 0.22f) else WarnRose.copy(alpha = 0.22f),
-                                selectedLabelColor = if (tag == DefectTag.CLEAN_PASS) PassEmerald else WarnRose
+                                selectedContainerColor = if (tag == DefectTag.CLEAN_PASS) colors.passEmerald.copy(alpha = 0.2f) else colors.warnRose.copy(alpha = 0.2f),
+                                selectedLabelColor = if (tag == DefectTag.CLEAN_PASS) colors.passEmerald else colors.warnRose
                             )
                         )
                     }
@@ -434,7 +433,7 @@ fun LogbookFormSheet(
                     maxLines = 4
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(AppStrings.statusLabel.get(lang), style = MaterialTheme.typography.labelLarge, color = TextSecondary)
+                Text(AppStrings.statusLabel.get(lang), style = MaterialTheme.typography.labelLarge, color = colors.textSecondary)
                 Spacer(modifier = Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     JobStatus.entries.forEach { st ->
@@ -444,8 +443,8 @@ fun LogbookFormSheet(
                             onClick = { status = st.code },
                             label = { Text(st.bi.get(lang)) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = (if (isPass) PassEmerald else MoltenAmber).copy(alpha = 0.25f),
-                                selectedLabelColor = if (isPass) PassEmerald else MoltenAmber
+                                selectedContainerColor = (if (isPass) colors.passEmerald else colors.moltenAmber).copy(alpha = 0.22f),
+                                selectedLabelColor = if (isPass) colors.passEmerald else colors.moltenAmber
                             )
                         )
                     }

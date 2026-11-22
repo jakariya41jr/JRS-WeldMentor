@@ -140,4 +140,29 @@ class ExampleRobolectricTest {
         }
         assertTrue(deckA.any { it.correctShuffledIndex >= 2 })
     }
+
+    @Test
+    fun `theme mode, voice speed presets, and continuous tts clause merging work cleanly`() {
+        val defaults = UserPreferences()
+        assertEquals(com.example.data.local.AppThemeMode.DARK, defaults.themeMode)
+        assertEquals(com.example.data.local.SpeechSpeedPreset.NATURAL, defaults.speechSpeedPreset)
+        assertTrue(defaults.bargeInEnabled)
+        assertTrue(defaults.autoSpeakAi)
+        assertEquals(0.97f, com.example.data.local.SpeechSpeedPreset.NATURAL.rateMultiplier, 0.001f)
+        assertEquals(
+            com.example.data.local.AppThemeMode.LIGHT,
+            com.example.data.local.AppThemeMode.fromCode("light")
+        )
+
+        val mergedSegments = com.example.audio.VoiceAssistantController.prepareNaturalSpeechSegments(
+            rawText = "1. Clean the bevel. 2. Set amperage to 95A. - Keep a tight arc.",
+            language = AppLanguage.EN
+        )
+        assertEquals(1, mergedSegments.size)
+        val spoken = mergedSegments.first()
+        assertTrue(spoken.contains("Clean the bevel."))
+        assertTrue(spoken.contains("Set amperage to 95A."))
+        assertTrue(spoken.contains("Keep a tight arc."))
+        assertTrue(!spoken.contains("1. ") && !spoken.contains("2. "))
+    }
 }

@@ -56,17 +56,9 @@ import com.example.data.model.WeldPosition
 import com.example.data.model.WeldProcess
 import com.example.i18n.AppLanguage
 import com.example.i18n.AppStrings
-import com.example.ui.theme.ArcCyan
 import com.example.ui.theme.ArcStatusPill
-import com.example.ui.theme.GlassBorder
 import com.example.ui.theme.GlassCard
-import com.example.ui.theme.MoltenAmber
-import com.example.ui.theme.PassEmerald
-import com.example.ui.theme.SlateSurface
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
-import com.example.ui.theme.WarnRose
+import com.example.ui.theme.WeldTheme
 import com.example.ui.viewmodel.LogbookFilter
 import com.example.ui.viewmodel.WeldUiState
 
@@ -79,6 +71,7 @@ fun LogbookScreen(
     onDeleteJob: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val palette = WeldTheme.colors
     val lang = uiState.preferences.language
     val filter = uiState.logFilter
     var pendingDeleteJob by remember { mutableStateOf<WeldJobEntity?>(null) }
@@ -90,8 +83,8 @@ fun LogbookScreen(
             FloatingActionButton(
                 onClick = onOpenNewForm,
                 modifier = Modifier.testTag("logbook_fab_add"),
-                containerColor = ArcCyan,
-                contentColor = Color(0xFF04131E)
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(Icons.Filled.Add, contentDescription = AppStrings.logNewWeld.get(lang))
             }
@@ -108,14 +101,14 @@ fun LogbookScreen(
                 Text(
                     text = AppStrings.logbookTitle.get(lang),
                     style = MaterialTheme.typography.headlineSmall,
-                    color = TextPrimary
+                    color = palette.textPrimary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = filter.searchQuery,
                     onValueChange = { q -> onUpdateFilter { it.copy(searchQuery = q) } },
-                    placeholder = { Text(AppStrings.searchLogsHint.get(lang), color = TextMuted) },
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, tint = ArcCyan) },
+                    placeholder = { Text(AppStrings.searchLogsHint.get(lang), color = palette.textMuted) },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, tint = palette.arcCyan) },
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier
@@ -144,8 +137,8 @@ fun LogbookScreen(
                             },
                             label = { Text(proc.label) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = ArcCyan.copy(alpha = 0.22f),
-                                selectedLabelColor = ArcCyan
+                                selectedContainerColor = palette.arcCyan.copy(alpha = 0.22f),
+                                selectedLabelColor = palette.arcCyan
                             )
                         )
                     }
@@ -191,8 +184,8 @@ fun LogbookScreen(
                             },
                             label = { Text(pos.code) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MoltenAmber.copy(alpha = 0.22f),
-                                selectedLabelColor = MoltenAmber
+                                selectedContainerColor = palette.moltenAmber.copy(alpha = 0.22f),
+                                selectedLabelColor = palette.moltenAmber
                             )
                         )
                     }
@@ -203,7 +196,7 @@ fun LogbookScreen(
                 item {
                     GlassCard(
                         modifier = Modifier.fillMaxWidth(),
-                        accentGlow = ArcCyan,
+                        accentGlow = palette.arcCyan,
                         contentPadding = 24.dp
                     ) {
                         Column(
@@ -213,27 +206,30 @@ fun LogbookScreen(
                             Icon(
                                 imageVector = Icons.Filled.Build,
                                 contentDescription = null,
-                                tint = ArcCyan,
+                                tint = palette.arcCyan,
                                 modifier = Modifier.size(44.dp)
                             )
                             Spacer(modifier = Modifier.height(10.dp))
                             Text(
                                 text = AppStrings.noLogsTitle.get(lang),
                                 style = MaterialTheme.typography.titleMedium,
-                                color = TextPrimary,
+                                color = palette.textPrimary,
                                 textAlign = TextAlign.Center
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 text = AppStrings.noLogsDesc.get(lang),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = TextSecondary,
+                                color = palette.textSecondary,
                                 textAlign = TextAlign.Center
                             )
                             Spacer(modifier = Modifier.height(14.dp))
                             Button(
                                 onClick = onOpenNewForm,
-                                colors = ButtonDefaults.buttonColors(containerColor = ArcCyan, contentColor = Color(0xFF04131E))
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                )
                             ) {
                                 Text(AppStrings.logNewWeld.get(lang))
                             }
@@ -258,10 +254,10 @@ fun LogbookScreen(
     pendingDeleteJob?.let { target ->
         AlertDialog(
             onDismissRequest = { pendingDeleteJob = null },
-            containerColor = SlateSurface,
-            title = { Text(AppStrings.confirmDelete.get(lang), color = TextPrimary) },
+            containerColor = palette.surface,
+            title = { Text(AppStrings.confirmDelete.get(lang), color = palette.textPrimary) },
             text = {
-                Text("${target.date} • ${target.process} ${target.position} (${target.rodFillerAndSize})", color = TextSecondary)
+                Text("${target.date} • ${target.process} ${target.position} (${target.rodFillerAndSize})", color = palette.textSecondary)
             },
             confirmButton = {
                 Button(
@@ -269,14 +265,14 @@ fun LogbookScreen(
                         onDeleteJob(target.id)
                         pendingDeleteJob = null
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = WarnRose)
+                    colors = ButtonDefaults.buttonColors(containerColor = palette.warnRose)
                 ) {
                     Text(AppStrings.delete.get(lang))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { pendingDeleteJob = null }) {
-                    Text(AppStrings.cancel.get(lang), color = TextSecondary)
+                    Text(AppStrings.cancel.get(lang), color = palette.textSecondary)
                 }
             }
         )
@@ -291,14 +287,15 @@ private fun WeldJobCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val palette = WeldTheme.colors
     val isPass = job.status == JobStatus.PASS.code
-    val statusColor = if (isPass) PassEmerald else MoltenAmber
+    val statusColor = if (isPass) palette.passEmerald else palette.moltenAmber
 
     GlassCard(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("weld_job_card_${job.id}"),
-        borderColor = if (isPass) PassEmerald.copy(alpha = 0.35f) else GlassBorder,
+        borderColor = if (isPass) palette.passEmerald.copy(alpha = 0.38f) else palette.glassBorder,
         contentPadding = 14.dp
     ) {
         Row(
@@ -307,9 +304,9 @@ private fun WeldJobCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                ArcStatusPill(text = job.process, color = ArcCyan)
-                ArcStatusPill(text = job.position, color = MoltenAmber)
-                ArcStatusPill(text = "${job.baseMaterial} • ${job.jointType}", color = TextSecondary)
+                ArcStatusPill(text = job.process, color = palette.arcCyan)
+                ArcStatusPill(text = job.position, color = palette.moltenAmber)
+                ArcStatusPill(text = "${job.baseMaterial} • ${job.jointType}", color = palette.textSecondary)
             }
             ArcStatusPill(
                 text = if (isPass) JobStatus.PASS.bi.get(lang) else JobStatus.NEEDS_IMPROVEMENT.bi.get(lang),
@@ -322,12 +319,12 @@ private fun WeldJobCard(
         Text(
             text = job.rodFillerAndSize,
             style = MaterialTheme.typography.titleMedium,
-            color = TextPrimary
+            color = palette.textPrimary
         )
         Text(
             text = "${job.date}  •  ${job.amperage.ifBlank { "-" }} ${if (job.voltage.isNotBlank()) "/ ${job.voltage}" else ""}  •  ${job.gasFlow.ifBlank { "-" }}",
             style = MaterialTheme.typography.labelMedium,
-            color = ArcCyan
+            color = palette.arcCyan
         )
 
         if (job.tigCup.isNotBlank() || job.tigTungsten.isNotBlank()) {
@@ -335,7 +332,7 @@ private fun WeldJobCard(
             Text(
                 text = "TIG: Cup ${job.tigCup} | ${job.tigColletBody} | Cap ${job.tigBackCap} | ${job.tigTungsten}",
                 style = MaterialTheme.typography.bodySmall,
-                color = TextSecondary
+                color = palette.textSecondary
             )
         }
 
@@ -344,18 +341,18 @@ private fun WeldJobCard(
             Text(
                 text = "${AppStrings.measuringToolsLabel.get(lang)}: ${job.measuringTools}",
                 style = MaterialTheme.typography.bodySmall,
-                color = TextSecondary
+                color = palette.textSecondary
             )
         }
 
         Spacer(modifier = Modifier.height(8.dp))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             if (job.ppeChecked) {
-                ArcStatusPill(text = "PPE OK", color = PassEmerald)
+                ArcStatusPill(text = "PPE OK", color = palette.passEmerald)
             }
             job.defectTags.split(",").map { it.trim() }.filter { it.isNotBlank() }.forEach { tag ->
                 val isClean = tag.equals("Clean/Pass", ignoreCase = true)
-                ArcStatusPill(text = tag, color = if (isClean) PassEmerald else WarnRose)
+                ArcStatusPill(text = tag, color = if (isClean) palette.passEmerald else palette.warnRose)
             }
         }
 
@@ -364,7 +361,7 @@ private fun WeldJobCard(
             Text(
                 text = "\"${job.trainerFeedback}\"",
                 style = MaterialTheme.typography.bodySmall,
-                color = TextPrimary
+                color = palette.textPrimary
             )
         }
 
@@ -373,11 +370,11 @@ private fun WeldJobCard(
             horizontalArrangement = Arrangement.End
         ) {
             IconButton(onClick = onEdit, modifier = Modifier.testTag("edit_job_${job.id}")) {
-                Icon(Icons.Filled.Edit, contentDescription = AppStrings.edit.get(lang), tint = ArcCyan, modifier = Modifier.size(19.dp))
+                Icon(Icons.Filled.Edit, contentDescription = AppStrings.edit.get(lang), tint = palette.arcCyan, modifier = Modifier.size(19.dp))
             }
             Spacer(modifier = Modifier.width(4.dp))
             IconButton(onClick = onDelete, modifier = Modifier.testTag("delete_job_${job.id}")) {
-                Icon(Icons.Filled.DeleteOutline, contentDescription = AppStrings.delete.get(lang), tint = WarnRose, modifier = Modifier.size(19.dp))
+                Icon(Icons.Filled.DeleteOutline, contentDescription = AppStrings.delete.get(lang), tint = palette.warnRose, modifier = Modifier.size(19.dp))
             }
         }
     }
