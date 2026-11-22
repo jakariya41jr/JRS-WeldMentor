@@ -23,8 +23,14 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Generate Debug Keystore
+        run: |
+          keytool -genkeypair -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 365 \
+          -storepass android -keypass android -keystore ~/.android/debug.keystore \
+          -dname "CN=Android Debug,O=Android,C=US" || true
+
       - name: Assemble Debug APK
-        run: gradle assembleDebug -x validateSigningDebug --stacktrace
+        run: gradle assembleDebug --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
