@@ -1,0 +1,192 @@
+package com.example.i18n
+
+object AppStrings {
+    val appName = "JRS WeldMentor"
+    val devName = "Md Jakariya Hasan"
+    val devWebsite = "jakariya41jr.xyz"
+    val devWebsiteUrl = "https://jakariya41jr.xyz"
+
+    // Navigation Tabs
+    val navHome = BiText("Home", "হোম")
+    val navLogbook = BiText("Logbook", "লগবুক")
+    val navViva = BiText("Viva", "ভাইভা")
+    val navGuides = BiText("Guides", "গাইড")
+    val navMentor = BiText("AI Mentor", "AI মেন্টর")
+
+    // Top Header
+    val builtBy = BiText("Developed by Md Jakariya Hasan | jakariya41jr.xyz", "ডেভেলপার: মোঃ জাকারিয়া হাসান | jakariya41jr.xyz")
+    val offlineReady = BiText("Offline Ready", "অফলাইন প্রস্তুত")
+    val onlineReady = BiText("Online", "অনলাইন")
+
+    // Home / Dashboard
+    val heroTitle = BiText("Master Every Weld & Trade Test", "প্রতিটি ওয়েল্ডিং ও ট্রেড টেস্টে দক্ষ হোন")
+    val heroSubtitle = BiText(
+        "Offline logbook, 1G–6G+ practice tracker, viva quiz & AI mentor",
+        "অফলাইন লগবুক, 1G–6G+ প্র্যাকটিস ট্র্যাকার, ভাইভা কুইজ ও AI মেন্টর"
+    )
+    val logNewWeld = BiText("Log New Weld", "নতুন ওয়েল্ড লগ")
+    val dailyGoalsHeader = BiText("Today's Practice & Learning Goals", "আজকের প্র্যাকটিস ও শেখার লক্ষ্য")
+    val addTask = BiText("Add Task", "টাস্ক যোগ")
+    val practiceMinutes = BiText("Practice Minutes", "প্র্যাকটিস মিনিট")
+    val add15Min = BiText("+15m", "+১৫মি")
+    val practicalJobsLabel = BiText("Practical Jobs", "প্র্যাকটিক্যাল জব")
+    val vivaReadinessLabel = BiText("Viva Readiness", "ভাইভা প্রস্তুতি")
+    val dailyStreakLabel = BiText("Daily Streak", "ধারাবাহিক দিন")
+    val passRateLabel = BiText("Pass Rate", "পাস হার")
+    val positionsMastered = BiText("Positions Practiced", "অনুশীলিত পজিশন")
+    val daysUnit = BiText("days", "দিন")
+    val quickToolsHeader = BiText("Trade Readiness Tools", "ট্রেড প্রস্তুতি টুলস")
+    val summaryCardTitle = BiText("Practice Summary Card", "প্র্যাকটিস সামারি কার্ড")
+    val summaryCardDesc = BiText("Print, copy or share your practice report", "প্র্যাকটিস রিপোর্ট প্রিন্ট, কপি বা শেয়ার করুন")
+    val stancePlannerTitle = BiText("Position & Stance Planner", "পজিশন ও স্ট্যান্স প্ল্যানার")
+    val stancePlannerDesc = BiText("4G & 6G+ posture & mirror", "4G ও 6G+ ভঙ্গি ও মিরর সেটআপ")
+    val tradeTestTitle = BiText("Trade Test & Overseas", "ট্রেড টেস্ট ও বিদেশ যাত্রা")
+    val tradeTestDesc = BiText("Coupon, PPE & interview check", "কুপন, PPE ও ইন্টারভিউ চেকলিস্ট")
+
+    // Daily Task Dialog
+    val newTaskTitle = BiText("New Daily Task", "নতুন দৈনিক টাস্ক")
+    val taskTitleHint = BiText("e.g., Practice 6G Root Pass with ER70S-6", "যেমন: ER70S-6 দিয়ে 6G রুট পাস প্র্যাকটিস")
+    val taskCategoryLabel = BiText("Category", "ক্যাটাগরি")
+    val catPractical = BiText("Practical", "প্র্যাকটিক্যাল")
+    val catViva = BiText("Viva / Theory", "ভাইভা / থিওরি")
+    val catSafety = BiText("PPE / Prep", "PPE / প্রস্তুতি")
+
+    // Logbook
+    val logbookTitle = BiText("Smart Welding Job Logbook", "স্মার্ট ওয়েল্ডিং জব লগবুক")
+    val searchLogsHint = BiText("Search rod, position, feedback, tools...", "রড, পজিশন, ফিডব্যাক, টুলস খুঁজুন...")
+    val allFilter = BiText("All", "সব")
+    val noLogsTitle = BiText("No Welding Jobs Logged Yet", "এখনো কোনো ওয়েল্ডিং জব লগ করা হয়নি")
+    val noLogsDesc = BiText(
+        "Tap + Log Weld to record process, 1G–6G+ position, rod/filler, amps, gas, measuring tools, PPE & defects.",
+        "+ লগ ওয়েল্ড এ ট্যাপ করে প্রসেস, 1G–6G+ পজিশন, রড, অ্যাম্পিয়ার, গ্যাস, পরিমাপক যন্ত্র ও ত্রুটি সংরক্ষণ করুন।"
+    )
+    val editLog = BiText("Edit Weld Job", "ওয়েল্ড জব সম্পাদনা")
+    val createLog = BiText("Log Welding Job", "ওয়েল্ডিং জব লগ করুন")
+    val dateLabel = BiText("Date (YYYY-MM-DD)", "তারিখ (YYYY-MM-DD)")
+    val processLabel = BiText("Welding Process", "ওয়েল্ডিং প্রসেস")
+    val positionLabel = BiText("Position", "পজিশন")
+    val materialLabel = BiText("Base Material", "বেস মেটেরিয়াল")
+    val jointLabel = BiText("Joint Type", "জয়েন্ট টাইপ")
+    val rodFillerLabel = BiText("Rod / Filler & Size", "রড / ফিলার ও সাইজ")
+    val rodFillerHint = BiText("e.g., LB52 2.5mm or ER70S-6 2.4mm", "যেমন: LB52 2.5mm বা ER70S-6 2.4mm")
+    val tigSetupLabel = BiText("TIG Torch / Consumable Setup", "TIG টর্চ ও কনজিউমেবল সেটআপ")
+    val tigCupLabel = BiText("Ceramic Cup (#)", "সিরামিক কাপ (#)")
+    val tigColletLabel = BiText("Collet / Body", "কলেট / বডি")
+    val tigBackCapLabel = BiText("Back Cap", "ব্যাক ক্যাপ")
+    val tigTungstenLabel = BiText("Tungsten", "টাংস্টেন")
+    val machineSettingsLabel = BiText("Machine Settings", "মেশিন সেটিংস")
+    val ampsLabel = BiText("Amperage (A)", "অ্যাম্পিয়ার (A)")
+    val voltsLabel = BiText("Voltage (V)", "ভোল্টেজ (V)")
+    val gasFlowLabel = BiText("Argon / Gas (L/min or CFH)", "আর্গন / গ্যাস (L/min বা CFH)")
+    val measuringToolsLabel = BiText("Measuring Tool Checks", "পরিমাপক যন্ত্র যাচাই")
+    val ppeChecklistLabel = BiText("PPE & HSE Checklist Verified", "PPE ও HSE চেকলিস্ট সম্পন্ন")
+    val defectTagsLabel = BiText("Defect / Inspection Tags", "ত্রুটি / ইন্সপেকশন ট্যাগ")
+    val trainerFeedbackLabel = BiText("Trainer Feedback / Notes", "প্রশিক্ষকের মতামত / নোট")
+    val statusLabel = BiText("Result Status", "ফলাফল স্ট্যাটাস")
+    val save = BiText("Save", "সংরক্ষণ করুন")
+    val cancel = BiText("Cancel", "বাতিল")
+    val delete = BiText("Delete", "মুছুন")
+    val edit = BiText("Edit", "সম্পাদনা")
+    val confirmDelete = BiText("Delete this job log?", "এই জব লগটি মুছে ফেলবেন?")
+
+    // Viva & Memorizer
+    val vivaQuizTab = BiText("Viva Quiz", "ভাইভা কুইজ")
+    val rodMemorizerTab = BiText("Rod & Code Cards", "রড ও কোড কার্ড")
+    val accuracyLabel = BiText("Accuracy", "সঠিকতা")
+    val answeredLabel = BiText("Answered", "উত্তর দেওয়া")
+    val weakTopicsLabel = BiText("Focus / Weak Topics", "দুর্বল টপিক (অনুশীলন করুন)")
+    val nextQuestion = BiText("Next Question", "পরবর্তী প্রশ্ন")
+    val resetStats = BiText("Reset Quiz Stats", "কুইজ পরিসংখ্যান রিসেট")
+    val explanationHeader = BiText("Technical Explanation", "টেকনিক্যাল ব্যাখ্যা")
+    val tapToFlip = BiText("Tap card to flip specs & field tips", "স্পেকস ও টিপস দেখতে কার্ডে ট্যাপ করুন")
+    val knewIt = BiText("Mastered", "আয়ত্ত হয়েছে")
+    val reviewMore = BiText("Review Again", "আবার দেখুন")
+
+    // Guides
+    val tabTips = BiText("Hands-On", "হাতে-কলমে")
+    val tabDefects = BiText("Defect Fixer", "ত্রুটি সমাধান")
+    val tabParams = BiText("Param Ref", "প্যারামিটার")
+    val tabPlanners = BiText("Planners", "প্ল্যানার")
+    val likelyCauses = BiText("Likely Causes", "সম্ভাব্য কারণ")
+    val practicalFixes = BiText("Practical Corrections", "বাস্তব সমাধান")
+    val paramDisclaimer = BiText(
+        "GENERAL STARTING REFERENCE ONLY — Always verify against your Welding Procedure Specification (WPS), electrode manufacturer box, and actual machine calibration.",
+        "শুধুমাত্র সাধারণ শুরুর রেফারেন্স — সর্বদা আপনার WPS, ইলেকট্রোড প্যাকেটের নির্দেশনা ও মেশিন ক্যালিব্রেশন অনুযায়ী যাচাই করুন।"
+    )
+
+    // AI Mentor
+    val aiMentorTitle = BiText("JRS WeldMentor AI", "JRS ওয়েল্ডমেন্টর AI")
+    val aiStrictScopeBadge = BiText("Strictly Welding & App Scoped", "শুধুমাত্র ওয়েল্ডিং ও অ্যাপ বিষয়ক")
+    val aiNoKeyTitle = BiText("Gemini API Key Not Set", "Gemini API কী সেট করা নেই")
+    val aiNoKeyDesc = BiText(
+        "Enter your personal Google Gemini API key in Settings to chat with the bilingual Welding AI Mentor. Core logbook, quiz & guides stay 100% offline.",
+        "বাংলা বা ইংরেজিতে ওয়েল্ডিং AI মেন্টরের সাথে কথা বলতে সেটিংসে আপনার নিজস্ব Google Gemini API কী দিন। লগবুক, কুইজ ও গাইড ১০০% অফলাইনে চলে।"
+    )
+    val openSettingsBtn = BiText("Configure API Key", "API কী সেট করুন")
+    val aiOfflineBanner = BiText(
+        "You are currently offline. Connect to the internet to query Gemini AI Mentor.",
+        "আপনি এখন অফলাইনে আছেন। Gemini AI মেন্টর ব্যবহার করতে ইন্টারনেটে যুক্ত হোন।"
+    )
+    val aiInputHint = BiText("Ask about 6G TIG, LB52 amps, undercut, viva...", "6G TIG, LB52 অ্যাম্পস, আন্ডারকাট, ভাইভা নিয়ে জিজ্ঞাসা করুন...")
+    val clearChat = BiText("Clear Chat", "চ্যাট মুছুন")
+
+    // Settings, Backup & About
+    val settingsTitle = BiText("Settings", "সেটিংস")
+    val languageSection = BiText("App Language / ভাষা", "অ্যাপের ভাষা / Language")
+    val profileSection = BiText("Trainee Profile", "প্রশিক্ষণার্থী প্রোফাইল")
+    val traineeNameLabel = BiText("Trainee Name", "প্রশিক্ষণার্থীর নাম")
+    val targetTradeLabel = BiText("Target Trade / Position", "লক্ষ্য ট্রেড / পজিশন")
+    val geminiKeySection = BiText("Bring-Your-Own Gemini API Key", "নিজস্ব Gemini API কী (BYOK)")
+    val geminiKeyHint = BiText("Paste your AIza... Gemini API key", "আপনার AIza... Gemini API কী পেস্ট করুন")
+    val geminiModelLabel = BiText("Gemini Model", "Gemini মডেল")
+    val saveKey = BiText("Save Key", "কী সংরক্ষণ")
+    val clearKey = BiText("Clear", "মুছুন")
+    val keySavedMsg = BiText("API key saved locally on device.", "API কী ডিভাইসে নিরাপদে সংরক্ষিত হয়েছে।")
+    val backupSection = BiText("Backup & Restore (Offline Portability)", "ব্যাকআপ ও রিস্টোর (অফলাইন সুরক্ষা)")
+    val exportJsonBtn = BiText("Export Full JSON", "সম্পূর্ণ JSON এক্সপোর্ট")
+    val exportCsvBtn = BiText("Export Logs CSV", "লগ CSV এক্সপোর্ট")
+    val importBackupBtn = BiText("Import JSON / CSV", "JSON / CSV ইম্পোর্ট")
+    val shareSummaryTitle = BiText("Practice Summary Card", "প্র্যাকটিস সামারি কার্ড")
+    val copyReport = BiText("Copy Text", "টেক্সট কপি")
+    val shareReport = BiText("Share", "শেয়ার")
+    val printReport = BiText("Print / PDF", "প্রিন্ট / PDF")
+    val copiedFeedback = BiText("Copied to clipboard", "ক্লিপবোর্ডে কপি হয়েছে")
+    val visitWebsite = BiText("Visit jakariya41jr.xyz", "jakariya41jr.xyz ভিজিট করুন")
+
+    // Currency Converter & Salary Estimator
+    val navCurrency = BiText("Currency", "মুদ্রা")
+    val currencyHomeTitle = BiText("Currency Converter", "কারেন্সি কনভার্টার")
+    val currencyHomeDesc = BiText("BDT, SAR, AED, KWD & salary OT", "BDT, SAR, AED, KWD ও বেতন-ওভারটাইম")
+    val currencyTabConverter = BiText("Converter", "কনভার্টার")
+    val currencyTabSalary = BiText("Salary & OT", "বেতন ও ওভারটাইম")
+    val currencyPopularLabel = BiText("Popular Welding Destinations", "জনপ্রিয় ওয়েল্ডিং গন্তব্যসমূহ")
+    val currencyAmountLabel = BiText("Amount", "পরিমাণ")
+    val currencyFromLabel = BiText("From", "থেকে")
+    val currencyToLabel = BiText("To", "এ রূপান্তর")
+    val currencyRefreshLive = BiText("Refresh Live Rates", "লাইভ রেট আপডেট")
+    val currencyRefreshing = BiText("Updating...", "আপডেট হচ্ছে...")
+    val currencyLastUpdated = BiText("Last Updated", "সর্বশেষ আপডেট")
+    val currencyDefaultOffline = BiText("Offline Default Rates", "অফলাইন ডিফল্ট রেট")
+    val currencyLiveCached = BiText("Live Cached Rates", "লাইভ ক্যাশড রেট")
+    val currencyCustomActive = BiText("Custom Rate Active", "কাস্টম রেট চালু")
+    val currencyCustomBtn = BiText("Custom Rate", "কাস্টম রেট")
+    val currencyResetRate = BiText("Use Auto Rate", "অটো রেট")
+    val currencyCustomTitle = BiText("Set Custom Exchange Rate", "কাস্টম রেট সেট করুন")
+    val currencyCustomHint = BiText("Enter bank or remittance rate", "ব্যাংক বা রেমিট্যান্স রেট লিখুন")
+    val currencySearchHint = BiText("Search country or currency (e.g., Saudi, টাকা, KWD)...", "দেশ বা মুদ্রা খুঁজুন (যেমন: Saudi, টাকা, KWD)...")
+    val currencyPickTitle = BiText("Select Currency", "মুদ্রা নির্বাচন করুন")
+    val salaryBasicLabel = BiText("Basic Monthly Salary", "মূল মাসিক বেতন (Basic)")
+    val salaryOtHoursLabel = BiText("Overtime Hours / Month", "মাসিক ওভারটাইম ঘণ্টা")
+    val salaryOtModeFixed = BiText("Fixed OT / Hr", "প্রতি ঘণ্টা OT")
+    val salaryOtModeMultiplier = BiText("Multiplier (e.g. 1.5x)", "গুণিতক (যেমন ১.৫x)")
+    val salaryOtRateLabel = BiText("OT Rate per Hour", "প্রতি ঘণ্টা ওভারটাইম রেট")
+    val salaryOtMultiplierLabel = BiText("OT Multiplier (e.g., 1.25 / 1.5 / 2.0)", "ওভারটাইম গুণিতক (১.২৫ / ১.৫ / ২.০)")
+    val salaryStdHoursLabel = BiText("Monthly Std Hours (e.g. 208 or 240)", "মাসিক স্ট্যান্ডার্ড ঘণ্টা (২০৮ বা ২৪০)")
+    val salaryAllowanceLabel = BiText("Food / Housing Allowance (Optional)", "খাবার / আবাসন ভাতা (ঐচ্ছিক)")
+    val salaryBreakdownTitle = BiText("Monthly Earnings Breakdown", "মাসিক আয়ের হিসাব")
+    val salaryBasicPay = BiText("Basic Salary", "মূল বেতন")
+    val salaryOtPay = BiText("Overtime Pay", "ওভারটাইম আয়")
+    val salaryAllowancePay = BiText("Allowances", "ভাতা")
+    val salaryTotalForeign = BiText("Total in Foreign Currency", "মোট বৈদেশিক মুদ্রায়")
+    val salaryTotalBdt = BiText("Total Monthly Equivalent (BDT)", "মোট মাসিক সমতুল্য (বাংলাদেশি টাকা)")
+}

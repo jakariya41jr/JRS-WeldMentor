@@ -1,0 +1,90 @@
+package com.example
+
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import com.example.data.backup.BackupManager
+import com.example.data.content.VivaKnowledgeBase
+import com.example.data.content.WorkshopGuidesData
+import com.example.data.local.UserPreferences
+import com.example.data.local.WeldJobEntity
+import com.example.data.remote.GeminiRestClient
+import com.example.i18n.AppLanguage
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [36])
+class ExampleRobolectricTest {
+
+    @Test
+    fun `app name matches JRS WeldMentor`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val appName = context.getString(R.string.app_name)
+        assertEquals("JRS WeldMentor", appName)
+    }
+
+    @Test
+    fun `json and csv backup round trip preserves weld jobs`() {
+        val sampleJob = WeldJobEntity(
+            date = "2026-11-21",
+            process = "GTAW/TIG",
+            position = "6G+6\"GTAW",
+            baseMaterial = "SS",
+            jointType = "Butt",
+            rodFillerAndSize = "316L 2.4mm",
+            tigCup = "#7",
+            tigColletBody = "Gas Lens 2.4mm",
+            tigBackCap = "Short",
+            tigTungsten = "2% Lanthanated 2.4mm",
+            amperage = "95A",
+            voltage = "",
+            gasFlow = "12 L/min",
+            measuringTools = "Angle Locator, Vernier Caliper",
+            ppeChecked = true,
+            defectTags = "Clean/Pass",
+            trainerFeedback = "Smooth root penetration",
+            status = "Pass"
+        )
+        val json = BackupManager.exportToJson(
+            jobs = listOf(sampleJob),
+            tasks = emptyList(),
+            attempts = emptyList(),
+            checklists = emptyList(),
+            prefs = UserPreferences(language = AppLanguage.BN, traineeName = "Test Welder")
+        )
+        val parsedJson = BackupManager.importBackup(json)
+        assertEquals(1, parsedJson.jobs.size)
+        assertEquals("6G+6\"GTAW", parsedJson.jobs.first().position)
+        assertEquals("bn", parsedJson.languageCode)
+
+        val csv = BackupManager.exportJobsToCsv(listOf(sampleJob))
+        val parsedCsv = BackupManager.importBackup(csv)
+        assertEquals(1, parsedCsv.jobs.size)
+        assertEquals("316L 2.4mm", parsedCsv.jobs.first().rodFillerAndSize)
+    }
+
+    @Test
+    fun `bilingual offline knowledge base and strict AI instruction are populated`() {
+        assertTrue(VivaKnowledgeBase.quizQuestions.size >= 15)
+        assertTrue(VivaKnowledgeBase.flashCards.size >= 8)
+        assertTrue(WorkshopGuidesData.defectGuides.size >= 5)
+        assertTrue(GeminiRestClient.STRICT_SYSTEM_INSTRUCTION.contains("Md. Jakariya Hasan"))
+        assertTrue(GeminiRestClient.STRICT_SYSTEM_INSTRUCTION.contains("jakariya41jr.xyz"))
+    }
+
+    @Test
+    fun `currency catalog supports all pinned destinations and offline conversion`() {
+        val rates = com.example.data.content.CurrencyCatalog.buildDefaultRatesMap()
+        com.example.data.content.CurrencyCatalog.pinnedWeldingCodes.forEach { code ->
+            assertTrue("Missing pinned code $code", rates.containsKey(code))
+        }
+        assertTrue(rates.containsKey("BDT"))
+        assertTrue(com.example.data.content.CurrencyCatalog.allCurrencies.size >= 90)
+        val sarToBdt = (rates["BDT"] ?: 0.0) / (rates["SAR"] ?: 1.0)
+        assertTrue(sarToBdt > 25.0)
+    }
+}
