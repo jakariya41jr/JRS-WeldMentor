@@ -331,7 +331,7 @@ fun WeldMentorAppRoot(viewModel: WeldMentorViewModel = viewModel()) {
         SettingsSheet(
             uiState = uiState,
             onSetLanguage = { viewModel.setLanguage(it) },
-            onSaveGeminiConfig = { key, model -> viewModel.saveGeminiConfig(key, model) },
+            onSaveGeminiConfig = { key -> viewModel.saveGeminiConfig(key) },
             onSaveProfile = { name, trade -> viewModel.saveProfile(name, trade) },
             onExportJson = { viewModel.buildJsonBackup() },
             onExportCsv = { viewModel.buildCsvBackup() },

@@ -106,4 +106,21 @@ class ExampleRobolectricTest {
         val sarToBdt = (rates["BDT"] ?: 0.0) / (rates["SAR"] ?: 1.0)
         assertTrue(sarToBdt > 25.0)
     }
+
+    @Test
+    fun `default gemini model is gemini-3_0-flash and speech normalizer smooths output`() {
+        assertEquals("gemini-3.0-flash", com.example.data.local.DEFAULT_GEMINI_MODEL)
+        assertEquals("gemini-3.0-flash", GeminiRestClient.DEFAULT_MODEL)
+        assertEquals("gemini-3.0-flash", UserPreferences().geminiModel)
+
+        val enSegments = com.example.audio.VoiceAssistantController.prepareNaturalSpeechSegments(
+            rawText = "**Root Pass:** Use 90-100A with `12 L/min` Argon / shielding gas.",
+            language = AppLanguage.EN
+        )
+        assertTrue(enSegments.isNotEmpty())
+        val joinedEn = enSegments.joinToString(" ")
+        assertTrue(joinedEn.contains("90 to 100A"))
+        assertTrue(joinedEn.contains("liters per minute"))
+        assertTrue(!joinedEn.contains("**") && !joinedEn.contains("`"))
+    }
 }

@@ -6,6 +6,7 @@ import com.example.data.content.VivaEvalResult
 import com.example.data.content.VivaKnowledgeBase
 import com.example.data.local.ChecklistProgressEntity
 import com.example.data.local.DailyTaskEntity
+import com.example.data.local.DEFAULT_GEMINI_MODEL
 import com.example.data.local.PreferencesManager
 import com.example.data.local.QuizAttemptEntity
 import com.example.data.local.UserPreferences
@@ -13,6 +14,7 @@ import com.example.data.local.WeldDatabase
 import com.example.data.local.WeldJobEntity
 import com.example.data.model.ChatMessage
 import com.example.data.model.QuizQuestion
+import com.example.data.remote.ApiKeyStatus
 import com.example.data.remote.ExchangeRateService
 import com.example.data.remote.GeminiRestClient
 import com.example.data.remote.NetworkMonitor
@@ -123,8 +125,24 @@ class WeldRepository(context: Context) {
 
     suspend fun setLanguage(language: AppLanguage) = prefsManager.setLanguage(language)
 
-    suspend fun setGeminiConfig(apiKey: String, model: String) =
+    suspend fun setGeminiConfig(apiKey: String, model: String = DEFAULT_GEMINI_MODEL) =
         prefsManager.setGeminiConfig(apiKey, model)
+
+    suspend fun validateAndActivateGeminiKey(apiKeyOverride: String? = null): ApiKeyStatus {
+        val prefs = prefsManager.getSnapshot()
+        val key = (apiKeyOverride ?: prefs.geminiApiKey).trim()
+        if (key.isEmpty()) {
+            return ApiKeyStatus.Missing
+        }
+        if (!networkMonitor.isOnlineNow()) {
+            return ApiKeyStatus.Offline(prefs.geminiModel.ifBlank { DEFAULT_GEMINI_MODEL })
+        }
+        val status = geminiClient.detectAndValidateApiKey(key, prefs.language)
+        if (status is ApiKeyStatus.Active) {
+            prefsManager.setDetectedModel(status.modelId)
+        }
+        return status
+    }
 
     suspend fun setProfile(name: String, targetTrade: String) =
         prefsManager.setProfile(name, targetTrade)

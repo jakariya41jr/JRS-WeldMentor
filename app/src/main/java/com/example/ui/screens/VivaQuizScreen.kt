@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Flip
+import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.RecordVoiceOver
@@ -48,11 +49,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.example.audio.rememberVoiceAssistantController
 import com.example.data.model.QuizQuestion
@@ -77,6 +80,8 @@ import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.VioletSpark
 import com.example.ui.theme.WarnRose
 import com.example.ui.viewmodel.WeldUiState
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -102,6 +107,18 @@ fun VivaQuizScreen(
 
     var delegateAnswerInput by remember { mutableStateOf("") }
     var autoSpeakDelegate by remember { mutableStateOf(true) }
+    var vivaHandsFreeLive by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    DisposableEffect(subMode) {
+        onDispose {
+            if (subMode != 1) {
+                vivaHandsFreeLive = false
+                voice.stopListening()
+                voice.stopSpeaking()
+            }
+        }
+    }
 
     val allTopics = remember {
         VivaKnowledgeBase.quizQuestions.map { it.topic }.distinctBy { it.en }
@@ -400,16 +417,65 @@ fun VivaQuizScreen(
             val aiExaminerReady = uiState.isOnline && uiState.preferences.geminiApiKey.isNotBlank()
             val alreadyCompleted = delegateState.completedQuestionIds.contains(delegateQuestion.id)
 
+            fun launchDelegateHandsFreeListen() {
+                if (!vivaHandsFreeLive || subMode != 1 || delegateState.isEvaluating || voice.isSpeaking) return
+                voice.startListening(
+                    silentTimeoutFallback = true,
+                    onNoSpeech = {
+                        if (vivaHandsFreeLive && subMode == 1 && !delegateState.isEvaluating && !voice.isSpeaking) {
+                            scope.launch {
+                                delay(350)
+                                launchDelegateHandsFreeListen()
+                            }
+                        }
+                    },
+                    onResult = { spoken ->
+                        delegateAnswerInput = spoken
+                        onResetDelegateFeedback()
+                        if (vivaHandsFreeLive) {
+                            onSubmitDelegateAnswer(delegateQuestion, spoken)
+                        }
+                    }
+                )
+            }
+
             item {
-                LaunchedEffect(delegateState.currentIndex, subMode, autoSpeakDelegate) {
-                    if (subMode == 1 && autoSpeakDelegate && delegateState.lastFeedback == null && voice.ttsReady) {
-                        voice.speak(delegateQuestion.question.get(lang))
+                LaunchedEffect(delegateState.currentIndex, subMode, autoSpeakDelegate, voice.ttsReady) {
+                    if (subMode == 1 && delegateState.lastFeedback == null && voice.ttsReady) {
+                        if (vivaHandsFreeLive) {
+                            voice.speak(delegateQuestion.question.get(lang)) {
+                                if (vivaHandsFreeLive && subMode == 1 && !delegateState.isEvaluating) {
+                                    scope.launch {
+                                        delay(350)
+                                        launchDelegateHandsFreeListen()
+                                    }
+                                }
+                            }
+                        } else if (autoSpeakDelegate) {
+                            voice.speak(delegateQuestion.question.get(lang))
+                        }
                     }
                 }
                 LaunchedEffect(delegateState.lastFeedback) {
                     val fb = delegateState.lastFeedback
-                    if (autoSpeakDelegate && !fb.isNullOrBlank()) {
-                        voice.speak(fb)
+                    if (!fb.isNullOrBlank()) {
+                        if (vivaHandsFreeLive) {
+                            voice.speak(fb) {
+                                if (vivaHandsFreeLive && subMode == 1) {
+                                    scope.launch {
+                                        delay(400)
+                                        if (delegateState.lastPassed == true) {
+                                            delegateAnswerInput = ""
+                                            onNextDelegateQuestion(allQuestions.size)
+                                        } else {
+                                            launchDelegateHandsFreeListen()
+                                        }
+                                    }
+                                }
+                            }
+                        } else if (autoSpeakDelegate) {
+                            voice.speak(fb)
+                        }
                     }
                 }
 
@@ -457,6 +523,56 @@ fun VivaQuizScreen(
                                 )
                             },
                             modifier = Modifier.testTag("delegate_auto_speak_chip")
+                        )
+                        FilterChip(
+                            selected = vivaHandsFreeLive,
+                            onClick = {
+                                vivaHandsFreeLive = !vivaHandsFreeLive
+                                if (vivaHandsFreeLive) {
+                                    autoSpeakDelegate = true
+                                    voice.clearError()
+                                    if (delegateState.lastFeedback != null || !voice.ttsReady) {
+                                        launchDelegateHandsFreeListen()
+                                    } else {
+                                        voice.speak(delegateQuestion.question.get(lang)) {
+                                            if (vivaHandsFreeLive && subMode == 1 && !delegateState.isEvaluating) {
+                                                scope.launch {
+                                                    delay(350)
+                                                    launchDelegateHandsFreeListen()
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    voice.stopListening()
+                                    voice.stopSpeaking()
+                                }
+                            },
+                            label = { Text(AppStrings.vivaHandsFreeToggle.get(lang)) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = if (vivaHandsFreeLive) Icons.Filled.Stop else Icons.Filled.GraphicEq,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = PassEmerald.copy(alpha = 0.24f),
+                                selectedLabelColor = PassEmerald
+                            ),
+                            modifier = Modifier.testTag("delegate_hands_free_chip")
+                        )
+                    }
+                    if (vivaHandsFreeLive) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        ArcStatusPill(
+                            text = when {
+                                delegateState.isEvaluating -> AppStrings.delegateEvaluating.get(lang)
+                                voice.isSpeaking -> AppStrings.liveSpeakingPrompt.get(lang)
+                                voice.isListening -> AppStrings.liveListeningPrompt.get(lang)
+                                else -> AppStrings.liveListeningPrompt.get(lang)
+                            },
+                            color = if (voice.isListening) WarnRose else PassEmerald
                         )
                     }
                 }

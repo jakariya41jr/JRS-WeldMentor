@@ -6,18 +6,25 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.content.VivaKnowledgeBase
 import com.example.data.local.ChecklistProgressEntity
 import com.example.data.local.DailyTaskEntity
+import com.example.data.local.DEFAULT_GEMINI_MODEL
 import com.example.data.local.PreferencesManager
 import com.example.data.local.QuizAttemptEntity
 import com.example.data.local.UserPreferences
 import com.example.data.local.WeldJobEntity
 import com.example.data.model.ChatMessage
 import com.example.data.model.QuizQuestion
+import com.example.data.remote.ApiKeyStatus
+import com.example.data.remote.InvalidApiKeyException
+import com.example.data.remote.QuotaExceededException
 import com.example.data.repository.WeldRepository
 import com.example.i18n.AppLanguage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -82,6 +89,7 @@ data class WeldUiState(
     val isRefreshingRates: Boolean = false,
     val aiChat: AiChatState = AiChatState(),
     val vivaDelegate: VivaDelegateState = VivaDelegateState(),
+    val apiKeyStatus: ApiKeyStatus = ApiKeyStatus.Missing,
     val statusMessage: String? = null
 )
 
@@ -91,12 +99,61 @@ class WeldMentorViewModel(application: Application) : AndroidViewModel(applicati
     private val _logFilter = MutableStateFlow(LogbookFilter())
     private val _aiChat = MutableStateFlow(AiChatState())
     private val _vivaDelegate = MutableStateFlow(VivaDelegateState())
+    private val _apiKeyStatus = MutableStateFlow<ApiKeyStatus>(ApiKeyStatus.Missing)
     private val _statusMessage = MutableStateFlow<String?>(null)
     private val _isRefreshingRates = MutableStateFlow(false)
+    private var announceNextValidation = false
 
     init {
         viewModelScope.launch {
             repository.ensureInitialDailyTasks()
+        }
+        viewModelScope.launch {
+            combine(
+                repository.preferencesFlow.map { it.geminiApiKey.trim() }.distinctUntilChanged(),
+                repository.isOnlineFlow.distinctUntilChanged()
+            ) { key, online -> key to online }
+                .collectLatest { (key, online) ->
+                    runAutoKeyValidation(key, online)
+                }
+        }
+    }
+
+    private suspend fun runAutoKeyValidation(key: String, online: Boolean) {
+        val shouldAnnounce = announceNextValidation
+        announceNextValidation = false
+
+        val lang = uiState.value.preferences.language
+        if (key.isEmpty()) {
+            _apiKeyStatus.value = ApiKeyStatus.Missing
+            if (shouldAnnounce) {
+                _statusMessage.value = if (lang == AppLanguage.BN) "API কী মুছে ফেলা হয়েছে।" else "API key cleared."
+            }
+            return
+        }
+        if (!online) {
+            val savedModel = uiState.value.preferences.geminiModel.ifBlank { DEFAULT_GEMINI_MODEL }
+            _apiKeyStatus.value = ApiKeyStatus.Offline(savedModel)
+            if (shouldAnnounce) {
+                _statusMessage.value = if (lang == AppLanguage.BN) {
+                    "API কী সংরক্ষিত। অনলাইন হলেই স্বয়ংক্রিয়ভাবে চালু হবে।"
+                } else {
+                    "API key saved. Will auto-activate once online."
+                }
+            }
+            return
+        }
+        _apiKeyStatus.value = ApiKeyStatus.Validating
+        val status = repository.validateAndActivateGeminiKey(key)
+        _apiKeyStatus.value = status
+        if (shouldAnnounce) {
+            _statusMessage.value = when (status) {
+                is ApiKeyStatus.Active -> status.detail
+                is ApiKeyStatus.QuotaLimited -> status.detail
+                is ApiKeyStatus.Invalid -> status.detail
+                is ApiKeyStatus.Offline -> if (lang == AppLanguage.BN) "অফলাইন — কী সংরক্ষিত" else "Offline — Key saved"
+                else -> null
+            }
         }
     }
 
@@ -123,6 +180,7 @@ class WeldMentorViewModel(application: Application) : AndroidViewModel(applicati
         val refreshingRates: Boolean,
         val chat: AiChatState,
         val delegate: VivaDelegateState,
+        val keyStatus: ApiKeyStatus,
         val msg: String?
     )
 
@@ -131,9 +189,11 @@ class WeldMentorViewModel(application: Application) : AndroidViewModel(applicati
         _isRefreshingRates,
         _aiChat,
         _vivaDelegate,
-        _statusMessage
-    ) { online, refreshing, chat, delegate, msg ->
-        UiExtras(online, refreshing, chat, delegate, msg)
+        _apiKeyStatus
+    ) { online, refreshing, chat, delegate, keyStatus ->
+        UiExtras(online, refreshing, chat, delegate, keyStatus, null)
+    }.combine(_statusMessage) { extras, msg ->
+        extras.copy(msg = msg)
     }
 
     val uiState: StateFlow<WeldUiState> = combine(
@@ -159,6 +219,7 @@ class WeldMentorViewModel(application: Application) : AndroidViewModel(applicati
             vivaDelegate = extras.delegate.copy(
                 completedQuestionIds = extras.delegate.completedQuestionIds + passedFromDb
             ),
+            apiKeyStatus = extras.keyStatus,
             statusMessage = extras.msg
         )
     }.stateIn(
@@ -298,9 +359,16 @@ class WeldMentorViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch { repository.toggleChecklist(itemId, groupName, checked) }
     }
 
-    fun saveGeminiConfig(apiKey: String, model: String) {
+    fun saveGeminiConfig(apiKey: String) {
+        val trimmed = apiKey.trim()
+        val existing = uiState.value.preferences.geminiApiKey.trim()
         viewModelScope.launch {
-            repository.setGeminiConfig(apiKey, model)
+            announceNextValidation = true
+            if (trimmed == existing) {
+                runAutoKeyValidation(trimmed, uiState.value.isOnline)
+            } else {
+                repository.setGeminiConfig(trimmed, DEFAULT_GEMINI_MODEL)
+            }
         }
     }
 
@@ -374,6 +442,18 @@ class WeldMentorViewModel(application: Application) : AndroidViewModel(applicati
                     }
                 },
                 onFailure = { err ->
+                    when (err) {
+                        is InvalidApiKeyException -> {
+                            _apiKeyStatus.value = ApiKeyStatus.Invalid(err.localizedMessage ?: "Invalid API key")
+                        }
+                        is QuotaExceededException -> {
+                            val activeModel = uiState.value.preferences.geminiModel.ifBlank { DEFAULT_GEMINI_MODEL }
+                            _apiKeyStatus.value = ApiKeyStatus.QuotaLimited(
+                                modelId = activeModel,
+                                detail = err.localizedMessage ?: "API quota limit reached"
+                            )
+                        }
+                    }
                     _aiChat.update {
                         it.copy(
                             isLoading = false,

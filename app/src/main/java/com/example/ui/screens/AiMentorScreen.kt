@@ -1,8 +1,12 @@
 package com.example.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,41 +20,53 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.audio.rememberVoiceAssistantController
+import com.example.data.remote.ApiKeyStatus
 import com.example.i18n.AppLanguage
 import com.example.i18n.AppStrings
 import com.example.i18n.BiText
@@ -64,8 +80,11 @@ import com.example.ui.theme.SlateSurfaceElevated
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.VioletSpark
 import com.example.ui.theme.WarnRose
 import com.example.ui.viewmodel.WeldUiState
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private val STARTER_PROMPTS = listOf(
     BiText("How to pass 6G TIG root without suck-back?", "সাক-ব্যাক ছাড়া 6G TIG রুট পাস করার উপায় কী?"),
@@ -74,6 +93,7 @@ private val STARTER_PROMPTS = listOf(
     BiText("Explain TIG Cup, Gas Lens & Short Back Cap", "TIG সিরামিক কাপ, গ্যাস লেন্স ও শর্ট ব্যাক ক্যাপ বুঝিয়ে দিন")
 )
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AiMentorScreen(
     uiState: WeldUiState,
@@ -86,21 +106,85 @@ fun AiMentorScreen(
     val hasKey = uiState.preferences.geminiApiKey.isNotBlank()
     val isOnline = uiState.isOnline
     val chatState = uiState.aiChat
+    val apiKeyStatus = uiState.apiKeyStatus
     var input by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
     val voice = rememberVoiceAssistantController(lang)
+    val scope = rememberCoroutineScope()
+
     var autoSpeakAi by remember { mutableStateOf(true) }
     var lastSpokenMessageId by remember { mutableStateOf<String?>(null) }
+
+    // Dual Voice Mode: false = Mode A (Voice-to-Text Manual Send), true = Mode B (Hands-Free Live Talk)
+    var isLiveTalkMode by remember { mutableStateOf(false) }
+    var liveSessionActive by remember { mutableStateOf(false) }
+
+    fun launchLiveListening() {
+        if (!liveSessionActive || !isOnline || chatState.isLoading || voice.isSpeaking) return
+        voice.startListening(
+            silentTimeoutFallback = true,
+            onNoSpeech = {
+                if (liveSessionActive && isOnline && !chatState.isLoading && !voice.isSpeaking) {
+                    scope.launch {
+                        delay(350)
+                        launchLiveListening()
+                    }
+                }
+            },
+            onResult = { spoken ->
+                if (liveSessionActive && isOnline && !chatState.isLoading) {
+                    onSendMessage(spoken)
+                } else if (!liveSessionActive) {
+                    input = if (input.isBlank()) spoken else "$input $spoken"
+                }
+            }
+        )
+    }
 
     LaunchedEffect(chatState.messages.size) {
         if (chatState.messages.isNotEmpty()) {
             listState.animateScrollToItem(chatState.messages.size - 1)
             val latest = chatState.messages.last()
-            if (autoSpeakAi && !latest.isUser && latest.id != lastSpokenMessageId) {
+            if (!latest.isUser && latest.id != lastSpokenMessageId) {
                 lastSpokenMessageId = latest.id
-                voice.speak(latest.text)
+                if (liveSessionActive) {
+                    voice.speak(latest.text) {
+                        if (liveSessionActive && isOnline && !chatState.isLoading) {
+                            scope.launch {
+                                delay(350)
+                                launchLiveListening()
+                            }
+                        }
+                    }
+                } else if (autoSpeakAi) {
+                    voice.speak(latest.text)
+                }
             }
         }
+    }
+
+    LaunchedEffect(chatState.errorMessage, isOnline, hasKey) {
+        if (liveSessionActive && (chatState.errorMessage != null || !isOnline || !hasKey)) {
+            liveSessionActive = false
+            voice.stopListening()
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            liveSessionActive = false
+            voice.stopListening()
+            voice.stopSpeaking()
+        }
+    }
+
+    val (pillText, pillColor) = when (apiKeyStatus) {
+        ApiKeyStatus.Missing -> AppStrings.statusMissing.get(lang) to MoltenAmber
+        ApiKeyStatus.Validating -> AppStrings.statusValidating.get(lang) to ArcCyan
+        is ApiKeyStatus.Active -> "${AppStrings.statusActive.get(lang)} • ${apiKeyStatus.modelId}" to PassEmerald
+        is ApiKeyStatus.QuotaLimited -> AppStrings.statusQuotaLimited.get(lang) to MoltenAmber
+        is ApiKeyStatus.Invalid -> AppStrings.statusInvalid.get(lang) to WarnRose
+        is ApiKeyStatus.Offline -> "${AppStrings.statusOfflineSaved.get(lang)} • ${apiKeyStatus.modelId}" to MoltenAmber
     }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -123,13 +207,13 @@ fun AiMentorScreen(
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(AppStrings.aiMentorTitle.get(lang), style = MaterialTheme.typography.titleMedium, color = TextPrimary)
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                         ArcStatusPill(text = AppStrings.aiStrictScopeBadge.get(lang), color = ArcCyan)
-                        ArcStatusPill(
-                            text = if (hasKey) "BYOK Ready" else "No Key",
-                            color = if (hasKey) PassEmerald else MoltenAmber
-                        )
+                        ArcStatusPill(text = pillText, color = pillColor)
                     }
                 }
                 IconButton(
@@ -147,6 +231,8 @@ fun AiMentorScreen(
                 }
                 if (chatState.messages.isNotEmpty()) {
                     IconButton(onClick = {
+                        liveSessionActive = false
+                        voice.stopListening()
                         voice.stopSpeaking()
                         onClearChat()
                     }, modifier = Modifier.testTag("clear_ai_chat_btn")) {
@@ -207,12 +293,50 @@ fun AiMentorScreen(
                     border = BorderStroke(1.dp, WarnRose.copy(alpha = 0.45f)),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
+                        .padding(horizontal = 16.dp, vertical = 2.dp)
                 ) {
                     Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.CloudOff, contentDescription = null, tint = WarnRose, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(AppStrings.aiOfflineBanner.get(lang), style = MaterialTheme.typography.bodySmall, color = TextPrimary)
+                    }
+                }
+            }
+
+            if (apiKeyStatus is ApiKeyStatus.Invalid || apiKeyStatus is ApiKeyStatus.QuotaLimited) {
+                val alertColor = if (apiKeyStatus is ApiKeyStatus.Invalid) WarnRose else MoltenAmber
+                val alertMsg = when (apiKeyStatus) {
+                    is ApiKeyStatus.Invalid -> apiKeyStatus.detail
+                    is ApiKeyStatus.QuotaLimited -> apiKeyStatus.detail
+                    else -> ""
+                }
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = alertColor.copy(alpha = 0.14f),
+                    border = BorderStroke(1.dp, alertColor.copy(alpha = 0.45f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 2.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Filled.WarningAmber, contentDescription = null, tint = alertColor, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = alertMsg,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextPrimary,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        OutlinedButton(
+                            onClick = onOpenSettings,
+                            border = BorderStroke(1.dp, alertColor.copy(alpha = 0.6f))
+                        ) {
+                            Text(AppStrings.settingsTitle.get(lang), color = alertColor, style = MaterialTheme.typography.labelSmall)
+                        }
                     }
                 }
             }
@@ -314,7 +438,7 @@ fun AiMentorScreen(
                             CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = ArcCyan)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = if (lang == AppLanguage.BN) "উত্তর তৈরি হচ্ছে..." else "Thinking...",
+                                text = AppStrings.liveThinkingPrompt.get(lang),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = TextSecondary
                             )
@@ -358,73 +482,207 @@ fun AiMentorScreen(
                 )
             }
 
-            // Input Row with Voice STT Mic Button
-            Row(
+            // Dual Voice Mode Switcher: Mode A (Voice-to-Text Manual Send) vs Mode B (Hands-Free Live Talk)
+            SingleChoiceSegmentedButtonRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
             ) {
-                Surface(
+                SegmentedButton(
+                    selected = !isLiveTalkMode,
                     onClick = {
-                        if (voice.isListening) {
+                        isLiveTalkMode = false
+                        if (liveSessionActive) {
+                            liveSessionActive = false
                             voice.stopListening()
-                        } else {
-                            voice.startListening { spoken ->
-                                input = if (input.isBlank()) spoken else "$input $spoken"
-                            }
+                            voice.stopSpeaking()
                         }
                     },
-                    modifier = Modifier
-                        .size(50.dp)
-                        .testTag("ai_voice_mic_btn"),
-                    shape = RoundedCornerShape(14.dp),
-                    color = if (voice.isListening) WarnRose else SlateSurfaceElevated,
-                    border = BorderStroke(1.dp, if (voice.isListening) WarnRose else ArcCyan.copy(alpha = 0.45f))
+                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                    modifier = Modifier.testTag("ai_mode_voice_to_text"),
+                    icon = { Icon(Icons.Filled.Mic, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 ) {
-                    Icon(
-                        imageVector = if (voice.isListening) Icons.Filled.Stop else Icons.Filled.Mic,
-                        contentDescription = if (voice.isListening) AppStrings.voiceListening.get(lang) else AppStrings.voiceSpeakBtn.get(lang),
-                        tint = if (voice.isListening) Color.White else ArcCyan,
-                        modifier = Modifier.padding(13.dp)
-                    )
+                    Text(AppStrings.voiceModeManual.get(lang), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-                OutlinedTextField(
-                    value = input,
-                    onValueChange = { input = it },
-                    placeholder = {
-                        Text(
-                            text = if (voice.isListening) AppStrings.voiceListening.get(lang) else AppStrings.aiInputHint.get(lang),
-                            color = if (voice.isListening) ArcCyan else TextMuted
-                        )
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .testTag("ai_chat_input"),
-                    maxLines = 3,
-                    shape = RoundedCornerShape(16.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Surface(
+                SegmentedButton(
+                    selected = isLiveTalkMode,
                     onClick = {
-                        if (input.isNotBlank() && isOnline && !chatState.isLoading) {
-                            onSendMessage(input)
-                            input = ""
-                        }
+                        isLiveTalkMode = true
+                        voice.clearError()
                     },
-                    modifier = Modifier
-                        .size(50.dp)
-                        .testTag("ai_chat_send_btn"),
-                    shape = RoundedCornerShape(14.dp),
-                    color = if (input.isNotBlank() && isOnline) ArcCyan else SlateSurfaceElevated
+                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                    modifier = Modifier.testTag("ai_mode_live_talk"),
+                    icon = { Icon(Icons.Filled.GraphicEq, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Send,
-                        contentDescription = "Send",
-                        tint = if (input.isNotBlank() && isOnline) Color(0xFF04131E) else TextMuted,
-                        modifier = Modifier.padding(13.dp)
+                    Text(AppStrings.voiceModeLiveTalk.get(lang), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+
+            if (!isLiveTalkMode) {
+                // Mode A: Voice-to-Text (Manual Review + Send)
+                Text(
+                    text = AppStrings.voiceModeManualDesc.get(lang),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextSecondary,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        onClick = {
+                            if (voice.isListening) {
+                                voice.stopListening()
+                            } else {
+                                voice.startListening(silentTimeoutFallback = false) { spoken ->
+                                    input = if (input.isBlank()) spoken else "$input $spoken"
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .size(50.dp)
+                            .testTag("ai_voice_mic_btn"),
+                        shape = RoundedCornerShape(14.dp),
+                        color = if (voice.isListening) WarnRose else SlateSurfaceElevated,
+                        border = BorderStroke(1.dp, if (voice.isListening) WarnRose else ArcCyan.copy(alpha = 0.45f))
+                    ) {
+                        Icon(
+                            imageVector = if (voice.isListening) Icons.Filled.Stop else Icons.Filled.Mic,
+                            contentDescription = if (voice.isListening) AppStrings.voiceListening.get(lang) else AppStrings.voiceSpeakBtn.get(lang),
+                            tint = if (voice.isListening) Color.White else ArcCyan,
+                            modifier = Modifier.padding(13.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    OutlinedTextField(
+                        value = input,
+                        onValueChange = { input = it },
+                        placeholder = {
+                            Text(
+                                text = if (voice.isListening) AppStrings.voiceListening.get(lang) else AppStrings.aiInputHint.get(lang),
+                                color = if (voice.isListening) ArcCyan else TextMuted
+                            )
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("ai_chat_input"),
+                        maxLines = 3,
+                        shape = RoundedCornerShape(16.dp)
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Surface(
+                        onClick = {
+                            if (input.isNotBlank() && isOnline && !chatState.isLoading) {
+                                onSendMessage(input)
+                                input = ""
+                            }
+                        },
+                        modifier = Modifier
+                            .size(50.dp)
+                            .testTag("ai_chat_send_btn"),
+                        shape = RoundedCornerShape(14.dp),
+                        color = if (input.isNotBlank() && isOnline) ArcCyan else SlateSurfaceElevated
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "Send",
+                            tint = if (input.isNotBlank() && isOnline) Color(0xFF04131E) else TextMuted,
+                            modifier = Modifier.padding(13.dp)
+                        )
+                    }
+                }
+            } else {
+                // Mode B: Continuous Hands-Free Live Talk
+                val phaseColor = when {
+                    !liveSessionActive -> ArcCyan
+                    chatState.isLoading -> MoltenAmber
+                    voice.isSpeaking -> PassEmerald
+                    voice.isListening -> WarnRose
+                    else -> VioletSpark
+                }
+                val phaseMessage = when {
+                    !liveSessionActive -> AppStrings.liveTalkReadyDesc.get(lang)
+                    chatState.isLoading -> AppStrings.liveThinkingPrompt.get(lang)
+                    voice.isSpeaking -> AppStrings.liveSpeakingPrompt.get(lang)
+                    voice.isListening -> AppStrings.liveListeningPrompt.get(lang)
+                    else -> AppStrings.liveListeningPrompt.get(lang)
+                }
+
+                GlassCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .testTag("ai_live_talk_panel"),
+                    accentGlow = phaseColor,
+                    borderColor = phaseColor.copy(alpha = 0.55f),
+                    contentPadding = 14.dp
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(12.dp)
+                                .clip(CircleShape)
+                                .background(phaseColor)
+                        )
+                        Text(
+                            text = phaseMessage,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextPrimary,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    if (!liveSessionActive) {
+                        Button(
+                            onClick = {
+                                if (isOnline && !chatState.isLoading) {
+                                    liveSessionActive = true
+                                    voice.clearError()
+                                    launchLiveListening()
+                                }
+                            },
+                            enabled = isOnline && !chatState.isLoading,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
+                                .testTag("ai_start_live_talk_btn"),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = PassEmerald,
+                                contentColor = Color(0xFF022015)
+                            )
+                        ) {
+                            Icon(Icons.Filled.GraphicEq, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(AppStrings.startLiveTalk.get(lang))
+                        }
+                    } else {
+                        Button(
+                            onClick = {
+                                liveSessionActive = false
+                                voice.stopListening()
+                                voice.stopSpeaking()
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
+                                .testTag("ai_stop_live_talk_btn"),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = WarnRose,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Icon(Icons.Filled.Stop, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(AppStrings.endLiveTalk.get(lang))
+                        }
+                    }
                 }
             }
         }

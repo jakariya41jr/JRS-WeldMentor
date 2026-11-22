@@ -20,10 +20,12 @@ import java.util.Locale
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "jrs_weldmentor_prefs")
 
+const val DEFAULT_GEMINI_MODEL = "gemini-3.0-flash"
+
 data class UserPreferences(
     val language: AppLanguage = AppLanguage.EN,
     val geminiApiKey: String = "",
-    val geminiModel: String = "gemini-2.5-flash",
+    val geminiModel: String = DEFAULT_GEMINI_MODEL,
     val traineeName: String = "Welding Trainee",
     val targetTrade: String = "6G TIG & SMAW Pipe Welder",
     val streakDays: Int = 1,
@@ -68,10 +70,16 @@ class PreferencesManager(private val context: Context) {
         val masteredRaw = prefs[Keys.MASTERED_CARDS] ?: ""
         val masteredSet = if (masteredRaw.isBlank()) emptySet() else masteredRaw.split(",").filter { it.isNotBlank() }.toSet()
 
+        val storedModel = prefs[Keys.GEMINI_MODEL].orEmpty()
+        val resolvedModel = when {
+            storedModel.isBlank() || storedModel == "gemini-2.5-flash" || storedModel == "gemini-2.5-pro" -> DEFAULT_GEMINI_MODEL
+            else -> storedModel
+        }
+
         UserPreferences(
             language = if (prefs[Keys.LANGUAGE] == "bn") AppLanguage.BN else AppLanguage.EN,
             geminiApiKey = prefs[Keys.GEMINI_API_KEY] ?: "",
-            geminiModel = prefs[Keys.GEMINI_MODEL] ?: "gemini-2.5-flash",
+            geminiModel = resolvedModel,
             traineeName = prefs[Keys.TRAINEE_NAME] ?: "Welding Trainee",
             targetTrade = prefs[Keys.TARGET_TRADE] ?: "6G TIG & SMAW Pipe Welder",
             streakDays = prefs[Keys.STREAK_DAYS] ?: 1,
@@ -93,10 +101,16 @@ class PreferencesManager(private val context: Context) {
         context.dataStore.edit { it[Keys.LANGUAGE] = language.code }
     }
 
-    suspend fun setGeminiConfig(apiKey: String, model: String) {
+    suspend fun setGeminiConfig(apiKey: String, model: String = DEFAULT_GEMINI_MODEL) {
         context.dataStore.edit {
             it[Keys.GEMINI_API_KEY] = apiKey.trim()
-            it[Keys.GEMINI_MODEL] = model.ifBlank { "gemini-2.5-flash" }
+            it[Keys.GEMINI_MODEL] = model.trim().ifBlank { DEFAULT_GEMINI_MODEL }
+        }
+    }
+
+    suspend fun setDetectedModel(model: String) {
+        context.dataStore.edit {
+            it[Keys.GEMINI_MODEL] = model.trim().ifBlank { DEFAULT_GEMINI_MODEL }
         }
     }
 

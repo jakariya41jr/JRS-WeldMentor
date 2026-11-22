@@ -224,4 +224,36 @@ object AppStrings {
     val delegateReviewBadge = BiText("NEEDS REVIEW • Try Again or Next", "পুনরায় দেখুন • আবার চেষ্টা করুন")
     val delegateOfflineBadge = BiText("Offline Interview Mode", "অফলাইন ইন্টারভিউ")
     val delegateAiBadge = BiText("Gemini AI Examiner", "Gemini AI পরীক্ষক")
+
+    // Model Auto-Detection & API Key Status
+    val keySaveActivateBtn = BiText("Save & Activate", "সংরক্ষণ ও চালু করুন")
+    val keyAutoDetectNote = BiText(
+        "Default: gemini-3.0-flash. Saving your key automatically verifies it and picks the best available model—no manual model selection needed.",
+        "ডিফল্ট: gemini-3.0-flash। কী সংরক্ষণ করলে স্বয়ংক্রিয়ভাবে যাচাই হয়ে সেরা মডেল চালু হবে—আলাদা মডেল সিলেক্ট করতে হবে না।"
+    )
+    val keyStatusLabel = BiText("AI Key & Model Status", "AI কী ও মডেল স্ট্যাটাস")
+    val statusMissing = BiText("Key Not Set", "কী সেট করা নেই")
+    val statusValidating = BiText("Validating & detecting model...", "যাচাই ও মডেল শনাক্ত হচ্ছে...")
+    val statusActive = BiText("Active", "সক্রিয়")
+    val statusInvalid = BiText("Invalid Key", "অকার্যকর কী")
+    val statusQuotaLimited = BiText("Quota Limited (429)", "কোটা সীমা পূর্ণ (429)")
+    val statusOfflineSaved = BiText("Offline • Key Saved", "অফলাইন • কী সংরক্ষিত")
+
+    // Dual Voice Mode (Manual Voice-to-Text + Hands-Free Live Talk)
+    val voiceModeManual = BiText("Voice-to-Text", "ভয়েস থেকে টেক্সট")
+    val voiceModeLiveTalk = BiText("Live Talk", "লাইভ কথা")
+    val voiceModeManualDesc = BiText(
+        "Tap Mic to transcribe into the box, review/edit, then tap Send.",
+        "মাইকে বলে টেক্সট করুন, দেখে প্রয়োজনে এডিট করে সেন্ড চাপুন।"
+    )
+    val startLiveTalk = BiText("Start Live Talk", "লাইভ কথা শুরু করুন")
+    val endLiveTalk = BiText("End Live Talk", "লাইভ বন্ধ করুন")
+    val liveTalkReadyDesc = BiText(
+        "One tap for continuous hands-free welding conversation. Speak naturally—AI listens, replies aloud, and listens again.",
+        "এক ট্যাপেই বিরতিহীন হ্যান্ডস-ফ্রি কথা বলুন। আপনি বলবেন, AI উত্তর শুনিয়ে আবার শুনবে।"
+    )
+    val liveListeningPrompt = BiText("Hands-free active — speak naturally...", "হ্যান্ডস-ফ্রি চালু — স্বাভাবিকভাবে বলুন...")
+    val liveThinkingPrompt = BiText("Thinking about your weld query...", "উত্তর তৈরি হচ্ছে...")
+    val liveSpeakingPrompt = BiText("AI speaking — will listen next...", "AI বলছে — শেষ হলেই আবার শুনবে...")
+    val vivaHandsFreeToggle = BiText("Hands-Free Live", "হ্যান্ডস-ফ্রি লাইভ")
 }
