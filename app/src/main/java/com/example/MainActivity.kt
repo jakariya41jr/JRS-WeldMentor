@@ -4,6 +4,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +21,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -220,12 +226,17 @@ fun WeldMentorAppRoot(viewModel: WeldMentorViewModel = viewModel()) {
                             .padding(innerPadding),
                         contentAlignment = Alignment.TopCenter
                     ) {
-                        Box(
+                        AnimatedContent(
+                            targetState = currentTab,
+                            transitionSpec = {
+                                fadeIn(animationSpec = tween(220)) togetherWith fadeOut(animationSpec = tween(180))
+                            },
+                            label = "mainTabTransition",
                             modifier = Modifier
                                 .fillMaxSize()
                                 .widthIn(max = 760.dp)
-                        ) {
-                            when (currentTab) {
+                        ) { activeTab ->
+                            when (activeTab) {
                                 MainTab.HOME -> HomeScreen(
                                     uiState = uiState,
                                     onOpenNewLog = {
@@ -279,6 +290,9 @@ fun WeldMentorAppRoot(viewModel: WeldMentorViewModel = viewModel()) {
                                     onNextDelegateQuestion = { total ->
                                         viewModel.nextDelegateQuestion(total)
                                     },
+                                    onShuffleDelegateQuestions = { total ->
+                                        viewModel.shuffleDelegateQuestions(total)
+                                    },
                                     onResetDelegateFeedback = {
                                         viewModel.resetDelegateFeedback()
                                     }
@@ -305,6 +319,22 @@ fun WeldMentorAppRoot(viewModel: WeldMentorViewModel = viewModel()) {
                                     uiState = uiState,
                                     onSendMessage = { viewModel.sendAiMessage(it) },
                                     onClearChat = { viewModel.clearAiChat() },
+                                    onSubmitDelegateAnswer = { q, ans ->
+                                        viewModel.submitDelegateAnswer(q, ans)
+                                    },
+                                    onNextDelegateQuestion = { total ->
+                                        viewModel.nextDelegateQuestion(total)
+                                    },
+                                    onShuffleDelegateQuestions = { total ->
+                                        viewModel.shuffleDelegateQuestions(total)
+                                    },
+                                    onResetDelegateFeedback = {
+                                        viewModel.resetDelegateFeedback()
+                                    },
+                                    onOpenVivaCards = {
+                                        vivaSubMode = 2
+                                        currentTab = MainTab.VIVA
+                                    },
                                     onOpenSettings = { showSettings = true }
                                 )
                             }

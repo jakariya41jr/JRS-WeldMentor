@@ -48,6 +48,9 @@ class VoiceAssistantController(
     var voiceError by mutableStateOf<String?>(null)
         private set
 
+    var partialTranscript by mutableStateOf("")
+        private set
+
     private var currentLanguage: AppLanguage = AppLanguage.EN
     private var pendingSpeechRequest: PendingSpeechRequest? = null
     private var speechRecognizer: SpeechRecognizer? = null
@@ -141,9 +144,9 @@ class VoiceAssistantController(
             }
         }
 
-        // Slightly measured, warm cadence prevents choppy or rushed robotic delivery
-        engine.setSpeechRate(if (language == AppLanguage.BN) 0.93f else 0.96f)
-        engine.setPitch(1.02f)
+        // Measured, warm cadence prevents choppy or rushed robotic delivery
+        engine.setSpeechRate(if (language == AppLanguage.BN) 0.94f else 0.97f)
+        engine.setPitch(1.01f)
     }
 
     private fun selectBestNaturalVoice(
@@ -164,10 +167,10 @@ class VoiceAssistantController(
                     var score = 0
                     if (v.locale == primaryLocale) score += 200
                     else if (v.locale == secondaryLocale) score += 120
-                    if (v.quality >= Voice.QUALITY_VERY_HIGH) score += 80
-                    else if (v.quality >= Voice.QUALITY_HIGH) score += 50
-                    else if (v.quality >= Voice.QUALITY_NORMAL) score += 20
-                    if (!v.isNetworkConnectionRequired) score += 40
+                    if (v.quality >= Voice.QUALITY_VERY_HIGH) score += 105
+                    else if (v.quality >= Voice.QUALITY_HIGH) score += 70
+                    else if (v.quality >= Voice.QUALITY_NORMAL) score += 25
+                    if (!v.isNetworkConnectionRequired) score += 25
                     if (v.latency <= Voice.LATENCY_NORMAL) score += 15
                     score
                 }
@@ -209,6 +212,7 @@ class VoiceAssistantController(
         onResult: (String) -> Unit
     ) {
         voiceError = null
+        partialTranscript = ""
         stopSpeaking()
 
         val hasPermission = ContextCompat.checkSelfPermission(
@@ -273,9 +277,11 @@ class VoiceAssistantController(
 
                 override fun onError(error: Int) {
                     isListening = false
-                    val isSilenceOrTimeout = error == SpeechRecognizer.ERROR_NO_MATCH ||
-                        error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT
-                    if (silentTimeoutFallback && isSilenceOrTimeout) {
+                    partialTranscript = ""
+                    val isSoftRetry = error == SpeechRecognizer.ERROR_NO_MATCH ||
+                        error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT ||
+                        error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY
+                    if (silentTimeoutFallback && isSoftRetry) {
                         voiceError = null
                         onNoSpeech?.invoke()
                     } else {
@@ -285,6 +291,7 @@ class VoiceAssistantController(
 
                 override fun onResults(results: Bundle?) {
                     isListening = false
+                    partialTranscript = ""
                     val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     val top = matches?.firstOrNull()?.trim().orEmpty()
                     if (top.isNotBlank()) {
@@ -294,7 +301,14 @@ class VoiceAssistantController(
                     }
                 }
 
-                override fun onPartialResults(partialResults: Bundle?) {}
+                override fun onPartialResults(partialResults: Bundle?) {
+                    val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    val live = matches?.firstOrNull()?.trim().orEmpty()
+                    if (live.isNotBlank()) {
+                        partialTranscript = live
+                    }
+                }
+
                 override fun onEvent(eventType: Int, params: Bundle?) {}
             })
 
@@ -304,12 +318,15 @@ class VoiceAssistantController(
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE, localeTag)
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, localeTag)
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-                putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
+                putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 1500L)
+                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1100L)
             }
             isListening = true
             recognizer.startListening(intent)
         } catch (_: Exception) {
             isListening = false
+            partialTranscript = ""
             voiceError = AppStrings.voiceUnavailable.get(currentLanguage)
         }
     }
@@ -321,6 +338,7 @@ class VoiceAssistantController(
         } catch (_: Exception) {
         }
         isListening = false
+        partialTranscript = ""
     }
 
     fun clearError() {
@@ -379,16 +397,22 @@ class VoiceAssistantController(
             val orConnector = if (language == AppLanguage.BN) " বা " else " or "
             val toConnector = if (language == AppLanguage.BN) " থেকে " else " to "
             val litersPerMin = if (language == AppLanguage.BN) " লিটার প্রতি মিনিট" else " liters per minute"
+            val approxWord = if (language == AppLanguage.BN) "প্রায় " else "approximately "
+            val degreeWord = if (language == AppLanguage.BN) " ডিগ্রি" else " degrees"
+            val plusWord = if (language == AppLanguage.BN) " প্লাস" else " plus"
 
             val cleaned = rawText
                 .replace(Regex("```[\\s\\S]*?```"), " ")
                 .replace(Regex("\\[(PASS|REVIEW)]", RegexOption.IGNORE_CASE), "")
-                .replace(Regex("[*_`#>|~]"), " ")
+                .replace(Regex("[*_`#>|]"), " ")
+                .replace("~", approxWord)
+                .replace("°", degreeWord)
+                .replace("6G+", "6G$plusWord", ignoreCase = true)
                 .replace("L/min", litersPerMin, ignoreCase = true)
                 .replace("L/m", litersPerMin, ignoreCase = true)
                 .replace(Regex("(\\d+)\\s*[–-]\\s*(\\d+)"), "$1$toConnector$2")
                 .replace(Regex("([A-Za-z0-9]+)/([A-Za-z0-9]+)"), "$1$orConnector$2")
-                .replace("•", ". ")
+                .replace("•", ", ")
                 .replace(Regex("\\r?\\n+"), ". ")
                 .replace(Regex("\\s{2,}"), " ")
                 .trim()
@@ -405,7 +429,7 @@ class VoiceAssistantController(
             for (sentence in rawSentences) {
                 if (current.isEmpty()) {
                     current.append(sentence)
-                } else if (current.length + sentence.length + 1 <= 190) {
+                } else if (current.length + sentence.length + 1 <= 240) {
                     current.append(' ').append(sentence)
                 } else {
                     merged.add(current.toString())

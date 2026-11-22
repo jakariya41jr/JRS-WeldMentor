@@ -11,7 +11,29 @@ data class VivaEvalResult(
     val evaluatedByAi: Boolean
 )
 
+data class RandomizedQuizQuestion(
+    val source: QuizQuestion,
+    val shuffledOptions: List<BiText>,
+    val correctShuffledIndex: Int
+)
+
 object VivaKnowledgeBase {
+
+    fun buildShuffledQuizDeck(
+        questions: List<QuizQuestion>,
+        random: kotlin.random.Random = kotlin.random.Random.Default
+    ): List<RandomizedQuizQuestion> {
+        return questions.shuffled(random).map { q ->
+            val indices = q.options.indices.shuffled(random)
+            val newOptions = indices.map { q.options[it] }
+            val newCorrectIndex = indices.indexOf(q.correctIndex).coerceAtLeast(0)
+            RandomizedQuizQuestion(
+                source = q,
+                shuffledOptions = newOptions,
+                correctShuffledIndex = newCorrectIndex
+            )
+        }
+    }
 
     val quizQuestions: List<QuizQuestion> = listOf(
         QuizQuestion(

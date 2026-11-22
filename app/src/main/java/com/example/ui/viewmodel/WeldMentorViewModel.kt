@@ -54,13 +54,17 @@ data class AiChatState(
 
 data class VivaDelegateState(
     val currentIndex: Int = 0,
+    val questionOrder: List<Int> = VivaKnowledgeBase.quizQuestions.indices.shuffled(),
     val isEvaluating: Boolean = false,
     val lastPassed: Boolean? = null,
     val lastFeedback: String? = null,
     val evaluatedByAi: Boolean = false,
     val autoRecorded: Boolean = false,
     val completedQuestionIds: Set<String> = emptySet()
-)
+) {
+    val activeQuestionIndex: Int
+        get() = if (questionOrder.isEmpty()) 0 else questionOrder[currentIndex % questionOrder.size]
+}
 
 data class WeldDashboardMetrics(
     val totalJobs: Int = 0,
@@ -545,8 +549,28 @@ class WeldMentorViewModel(application: Application) : AndroidViewModel(applicati
     fun nextDelegateQuestion(totalQuestions: Int) {
         val safeTotal = totalQuestions.coerceAtLeast(1)
         _vivaDelegate.update {
+            val nextIdx = (it.currentIndex + 1) % safeTotal
+            val nextOrder = if (nextIdx == 0 || it.questionOrder.size != safeTotal) {
+                (0 until safeTotal).shuffled()
+            } else {
+                it.questionOrder
+            }
             it.copy(
-                currentIndex = (it.currentIndex + 1) % safeTotal,
+                currentIndex = nextIdx,
+                questionOrder = nextOrder,
+                lastPassed = null,
+                lastFeedback = null,
+                autoRecorded = false
+            )
+        }
+    }
+
+    fun shuffleDelegateQuestions(totalQuestions: Int = VivaKnowledgeBase.quizQuestions.size) {
+        val safeTotal = totalQuestions.coerceAtLeast(1)
+        _vivaDelegate.update {
+            it.copy(
+                currentIndex = 0,
+                questionOrder = (0 until safeTotal).shuffled(),
                 lastPassed = null,
                 lastFeedback = null,
                 autoRecorded = false

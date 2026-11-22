@@ -69,6 +69,8 @@ import androidx.compose.ui.unit.dp
 import com.example.data.content.VivaKnowledgeBase
 import com.example.i18n.AppLanguage
 import com.example.i18n.AppStrings
+import com.example.ui.components.CenterpiecePhase
+import com.example.ui.components.WeldingArcCenterpiece
 import com.example.ui.theme.ArcCyan
 import com.example.ui.theme.ArcStatusPill
 import com.example.ui.theme.GlassBorder
@@ -94,6 +96,7 @@ fun VivaQuizScreen(
     onToggleMasteredCard: (String, Boolean) -> Unit,
     onSubmitDelegateAnswer: (QuizQuestion, String) -> Unit,
     onNextDelegateQuestion: (Int) -> Unit,
+    onShuffleDelegateQuestions: (Int) -> Unit,
     onResetDelegateFeedback: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -102,6 +105,7 @@ fun VivaQuizScreen(
     val voice = rememberVoiceAssistantController(lang)
     val subMode = selectedSubMode
     var selectedTopicEn by remember { mutableStateOf("ALL") }
+    var quizShuffleSeed by remember { mutableIntStateOf(0) }
     var currentQuestionIdx by remember { mutableIntStateOf(0) }
     var selectedOption by remember { mutableStateOf<Int?>(null) }
 
@@ -134,7 +138,11 @@ fun VivaQuizScreen(
             else -> VivaKnowledgeBase.quizQuestions.filter { it.topic.en == selectedTopicEn }
         }
     }
-    val safeQuestion = filteredQuestions[currentQuestionIdx % filteredQuestions.size]
+    val shuffledDeck = remember(filteredQuestions, quizShuffleSeed) {
+        VivaKnowledgeBase.buildShuffledQuizDeck(filteredQuestions)
+    }
+    val safeItem = shuffledDeck[currentQuestionIdx % shuffledDeck.size]
+    val safeQuestion = safeItem.source
 
     var cardIdx by remember { mutableIntStateOf(0) }
     var isCardFlipped by remember { mutableStateOf(false) }
@@ -200,11 +208,23 @@ fun VivaQuizScreen(
                                 color = TextSecondary
                             )
                         }
-                        if (metrics.totalQuizAnswered > 0) {
-                            TextButton(onClick = onResetStats, modifier = Modifier.testTag("reset_quiz_btn")) {
-                                Icon(Icons.Filled.Refresh, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            TextButton(
+                                onClick = {
+                                    quizShuffleSeed++
+                                    currentQuestionIdx = 0
+                                    selectedOption = null
+                                },
+                                modifier = Modifier.testTag("quiz_shuffle_btn")
+                            ) {
+                                Icon(Icons.Filled.Refresh, contentDescription = AppStrings.shuffleQuestionsBtn.get(lang), tint = ArcCyan, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text(AppStrings.resetStats.get(lang), color = TextSecondary)
+                                Text(AppStrings.shuffleQuestionsBtn.get(lang), color = ArcCyan)
+                            }
+                            if (metrics.totalQuizAnswered > 0) {
+                                TextButton(onClick = onResetStats, modifier = Modifier.testTag("reset_quiz_btn")) {
+                                    Text(AppStrings.resetStats.get(lang), color = TextSecondary)
+                                }
                             }
                         }
                     }
@@ -292,9 +312,12 @@ fun VivaQuizScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        ArcStatusPill(text = safeQuestion.topic.get(lang), color = ArcCyan)
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            ArcStatusPill(text = safeQuestion.topic.get(lang), color = ArcCyan)
+                            ArcStatusPill(text = AppStrings.shuffledSetBadge.get(lang), color = VioletSpark)
+                        }
                         Text(
-                            text = "${(currentQuestionIdx % filteredQuestions.size) + 1} / ${filteredQuestions.size}",
+                            text = "${(currentQuestionIdx % shuffledDeck.size) + 1} / ${shuffledDeck.size}",
                             style = MaterialTheme.typography.labelMedium,
                             color = TextSecondary
                         )
@@ -307,10 +330,10 @@ fun VivaQuizScreen(
                     )
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    safeQuestion.options.forEachIndexed { idx, opt ->
+                    safeItem.shuffledOptions.forEachIndexed { idx, opt ->
                         val answered = selectedOption != null
                         val isChosen = selectedOption == idx
-                        val isRightOption = idx == safeQuestion.correctIndex
+                        val isRightOption = idx == safeItem.correctShuffledIndex
 
                         val borderCol = when {
                             !answered -> GlassBorder
@@ -333,7 +356,7 @@ fun VivaQuizScreen(
                                         safeQuestion.id,
                                         safeQuestion.topic.en,
                                         safeQuestion.topic.bn,
-                                        idx == safeQuestion.correctIndex
+                                        idx == safeItem.correctShuffledIndex
                                     )
                                 }
                             },
@@ -410,10 +433,10 @@ fun VivaQuizScreen(
                 }
             }
         } else if (subMode == 1) {
-            // Interactive Delegate Viva Mode (Voice STT + TTS + Auto-Progress)
+            // Interactive Delegate Viva Mode (Randomized Deck + Dual Voice STT/TTS + Auto-Progress)
             val delegateState = uiState.vivaDelegate
             val allQuestions = VivaKnowledgeBase.quizQuestions
-            val delegateQuestion = allQuestions[delegateState.currentIndex % allQuestions.size]
+            val delegateQuestion = allQuestions[delegateState.activeQuestionIndex % allQuestions.size]
             val aiExaminerReady = uiState.isOnline && uiState.preferences.geminiApiKey.isNotBlank()
             val alreadyCompleted = delegateState.completedQuestionIds.contains(delegateQuestion.id)
 
@@ -440,7 +463,7 @@ fun VivaQuizScreen(
             }
 
             item {
-                LaunchedEffect(delegateState.currentIndex, subMode, autoSpeakDelegate, voice.ttsReady) {
+                LaunchedEffect(delegateState.currentIndex, delegateState.activeQuestionIndex, subMode, autoSpeakDelegate, voice.ttsReady) {
                     if (subMode == 1 && delegateState.lastFeedback == null && voice.ttsReady) {
                         if (vivaHandsFreeLive) {
                             voice.speak(delegateQuestion.question.get(lang)) {
@@ -479,37 +502,48 @@ fun VivaQuizScreen(
                     }
                 }
 
+                val delegatePhase = when {
+                    delegateState.isEvaluating -> CenterpiecePhase.THINKING
+                    voice.isSpeaking -> CenterpiecePhase.SPEAKING
+                    voice.isListening -> CenterpiecePhase.LISTENING
+                    else -> CenterpiecePhase.IDLE
+                }
+
+                WeldingArcCenterpiece(
+                    phase = delegatePhase,
+                    title = AppStrings.delegateModeTitle.get(lang),
+                    subtitle = when {
+                        voice.partialTranscript.isNotBlank() -> "${AppStrings.liveHearingPrefix.get(lang)}: \"${voice.partialTranscript}\""
+                        delegateState.isEvaluating -> AppStrings.delegateEvaluating.get(lang)
+                        voice.isSpeaking -> AppStrings.liveSpeakingPrompt.get(lang)
+                        voice.isListening -> AppStrings.liveListeningPrompt.get(lang)
+                        else -> AppStrings.delegateModeSubtitle.get(lang)
+                    },
+                    badgeText = if (aiExaminerReady) AppStrings.delegateAiBadge.get(lang) else AppStrings.delegateOfflineBadge.get(lang),
+                    modifier = Modifier.padding(bottom = 10.dp)
+                )
+
                 GlassCard(modifier = Modifier.fillMaxWidth(), accentGlow = ArcCyan, contentPadding = 14.dp) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = AppStrings.delegateModeTitle.get(lang),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = TextPrimary
-                            )
-                            Text(
-                                text = AppStrings.delegateModeSubtitle.get(lang),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TextSecondary
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(10.dp))
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         ArcStatusPill(
-                            text = if (aiExaminerReady) AppStrings.delegateAiBadge.get(lang) else AppStrings.delegateOfflineBadge.get(lang),
-                            color = if (aiExaminerReady) PassEmerald else MoltenAmber
-                        )
-                        ArcStatusPill(
                             text = "${delegateState.completedQuestionIds.size} / ${allQuestions.size} ${AppStrings.knewIt.get(lang)}",
                             color = ArcCyan
+                        )
+                        FilterChip(
+                            selected = false,
+                            onClick = {
+                                voice.stopSpeaking()
+                                delegateAnswerInput = ""
+                                onShuffleDelegateQuestions(allQuestions.size)
+                            },
+                            label = { Text(AppStrings.shuffleQuestionsBtn.get(lang)) },
+                            leadingIcon = {
+                                Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                            },
+                            modifier = Modifier.testTag("delegate_shuffle_btn")
                         )
                         FilterChip(
                             selected = autoSpeakDelegate,
@@ -561,18 +595,6 @@ fun VivaQuizScreen(
                                 selectedLabelColor = PassEmerald
                             ),
                             modifier = Modifier.testTag("delegate_hands_free_chip")
-                        )
-                    }
-                    if (vivaHandsFreeLive) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        ArcStatusPill(
-                            text = when {
-                                delegateState.isEvaluating -> AppStrings.delegateEvaluating.get(lang)
-                                voice.isSpeaking -> AppStrings.liveSpeakingPrompt.get(lang)
-                                voice.isListening -> AppStrings.liveListeningPrompt.get(lang)
-                                else -> AppStrings.liveListeningPrompt.get(lang)
-                            },
-                            color = if (voice.isListening) WarnRose else PassEmerald
                         )
                     }
                 }

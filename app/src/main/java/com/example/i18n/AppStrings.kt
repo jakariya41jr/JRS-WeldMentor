@@ -256,4 +256,12 @@ object AppStrings {
     val liveThinkingPrompt = BiText("Thinking about your weld query...", "উত্তর তৈরি হচ্ছে...")
     val liveSpeakingPrompt = BiText("AI speaking — will listen next...", "AI বলছে — শেষ হলেই আবার শুনবে...")
     val vivaHandsFreeToggle = BiText("Hands-Free Live", "হ্যান্ডস-ফ্রি লাইভ")
+
+    // Quiz Randomization & AI Mentor Delegator Mode
+    val shuffleQuestionsBtn = BiText("Shuffle", "শাফল করুন")
+    val shuffledSetBadge = BiText("Randomized Set", "শাফলড সেট")
+    val aiModeChatLabel = BiText("AI Chat", "AI চ্যাট")
+    val aiModeDelegatorLabel = BiText("Delegator Mode", "ডেলিগেটর মোড")
+    val launchFullVivaDeckBtn = BiText("Open Viva Cards", "ভাইভা কার্ড খুলুন")
+    val liveHearingPrefix = BiText("Hearing", "শুনছি")
 }

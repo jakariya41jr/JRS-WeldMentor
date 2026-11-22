@@ -123,4 +123,21 @@ class ExampleRobolectricTest {
         assertTrue(joinedEn.contains("liters per minute"))
         assertTrue(!joinedEn.contains("**") && !joinedEn.contains("`"))
     }
+
+    @Test
+    fun `quiz randomization shuffles questions and A-B-C-D options while preserving correct mapping`() {
+        val original = VivaKnowledgeBase.quizQuestions
+        val deckA = VivaKnowledgeBase.buildShuffledQuizDeck(original, kotlin.random.Random(42))
+        val deckB = VivaKnowledgeBase.buildShuffledQuizDeck(original, kotlin.random.Random(99))
+
+        assertEquals(original.size, deckA.size)
+        assertTrue(deckA.map { it.source.id } != original.map { it.id })
+        assertTrue(deckA.map { it.source.id } != deckB.map { it.source.id })
+
+        deckA.forEach { item ->
+            val expectedCorrect = item.source.options[item.source.correctIndex]
+            assertEquals(expectedCorrect, item.shuffledOptions[item.correctShuffledIndex])
+        }
+        assertTrue(deckA.any { it.correctShuffledIndex >= 2 })
+    }
 }
