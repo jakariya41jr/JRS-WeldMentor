@@ -260,6 +260,15 @@ fun WeldMentorAppRoot(viewModel: WeldMentorViewModel = viewModel()) {
                                     onResetStats = { viewModel.resetQuizStats() },
                                     onToggleMasteredCard = { cId, m ->
                                         viewModel.toggleMasteredFlashcard(cId, m)
+                                    },
+                                    onSubmitDelegateAnswer = { q, ans ->
+                                        viewModel.submitDelegateAnswer(q, ans)
+                                    },
+                                    onNextDelegateQuestion = { total ->
+                                        viewModel.nextDelegateQuestion(total)
+                                    },
+                                    onResetDelegateFeedback = {
+                                        viewModel.resetDelegateFeedback()
                                     }
                                 )
 

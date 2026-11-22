@@ -69,11 +69,30 @@ class ExampleRobolectricTest {
 
     @Test
     fun `bilingual offline knowledge base and strict AI instruction are populated`() {
-        assertTrue(VivaKnowledgeBase.quizQuestions.size >= 15)
+        assertTrue(VivaKnowledgeBase.quizQuestions.size >= 18)
         assertTrue(VivaKnowledgeBase.flashCards.size >= 8)
+        assertTrue(WorkshopGuidesData.theoryTopics.size >= 4)
         assertTrue(WorkshopGuidesData.defectGuides.size >= 5)
-        assertTrue(GeminiRestClient.STRICT_SYSTEM_INSTRUCTION.contains("Md. Jakariya Hasan"))
-        assertTrue(GeminiRestClient.STRICT_SYSTEM_INSTRUCTION.contains("jakariya41jr.xyz"))
+        assertTrue(GeminiRestClient.STRICT_SYSTEM_INSTRUCTION.contains("Md Jakariya Hasan"))
+        assertTrue(GeminiRestClient.STRICT_SYSTEM_INSTRUCTION.contains("Jakariya41jr.xyz"))
+    }
+
+    @Test
+    fun `offline delegate viva evaluator scores welding answers and avoids false positives`() {
+        val whatIsWelding = VivaKnowledgeBase.quizQuestions.first { it.id == "q_what_is_welding" }
+        val passEval = VivaKnowledgeBase.evaluateOfflineDelegateAnswer(
+            question = whatIsWelding,
+            userAnswer = "Welding permanently joins two metals by melting and fusion",
+            language = AppLanguage.EN
+        )
+        assertTrue(passEval.passed)
+
+        val failEval = VivaKnowledgeBase.evaluateOfflineDelegateAnswer(
+            question = whatIsWelding,
+            userAnswer = "I like football",
+            language = AppLanguage.EN
+        )
+        assertTrue(!failEval.passed)
     }
 
     @Test

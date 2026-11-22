@@ -74,7 +74,7 @@ fun SummaryShareDialog(
     val plainReport = buildString {
         appendLine("====================================")
         appendLine("   JRS WeldMentor - Practice Report")
-        appendLine("   Developed by Md Jakariya Hasan (jakariya41jr.xyz)")
+        appendLine("   Developed by Md Jakariya Hasan (Jakariya41jr.xyz)")
         appendLine("====================================")
         appendLine("Trainee: ${prefs.traineeName}")
         appendLine("Target Trade: ${prefs.targetTrade}")
@@ -233,7 +233,7 @@ private fun printHtmlSummary(
         <html>
         <body style="font-family: sans-serif; padding: 24px; color: #0f172a;">
           <h2 style="margin-bottom:4px;">JRS WeldMentor — Practice Summary</h2>
-          <p style="color:#0284c7; margin-top:0;">Developed by Md Jakariya Hasan (jakariya41jr.xyz)</p>
+          <p style="color:#0284c7; margin-top:0;">Developed by Md Jakariya Hasan (Jakariya41jr.xyz)</p>
           <p><strong>Trainee:</strong> $traineeName &nbsp;|&nbsp; <strong>Trade:</strong> $targetTrade</p>
           <hr/>
           <pre style="font-family: monospace; white-space: pre-wrap; line-height:1.5;">$escaped</pre>

@@ -11,6 +11,7 @@ import com.example.data.local.QuizAttemptEntity
 import com.example.data.local.UserPreferences
 import com.example.data.local.WeldJobEntity
 import com.example.data.model.ChatMessage
+import com.example.data.model.QuizQuestion
 import com.example.data.repository.WeldRepository
 import com.example.i18n.AppLanguage
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,6 +45,16 @@ data class AiChatState(
     val errorMessage: String? = null
 )
 
+data class VivaDelegateState(
+    val currentIndex: Int = 0,
+    val isEvaluating: Boolean = false,
+    val lastPassed: Boolean? = null,
+    val lastFeedback: String? = null,
+    val evaluatedByAi: Boolean = false,
+    val autoRecorded: Boolean = false,
+    val completedQuestionIds: Set<String> = emptySet()
+)
+
 data class WeldDashboardMetrics(
     val totalJobs: Int = 0,
     val todayJobs: Int = 0,
@@ -70,6 +81,7 @@ data class WeldUiState(
     val isOnline: Boolean = false,
     val isRefreshingRates: Boolean = false,
     val aiChat: AiChatState = AiChatState(),
+    val vivaDelegate: VivaDelegateState = VivaDelegateState(),
     val statusMessage: String? = null
 )
 
@@ -78,6 +90,7 @@ class WeldMentorViewModel(application: Application) : AndroidViewModel(applicati
 
     private val _logFilter = MutableStateFlow(LogbookFilter())
     private val _aiChat = MutableStateFlow(AiChatState())
+    private val _vivaDelegate = MutableStateFlow(VivaDelegateState())
     private val _statusMessage = MutableStateFlow<String?>(null)
     private val _isRefreshingRates = MutableStateFlow(false)
 
@@ -109,6 +122,7 @@ class WeldMentorViewModel(application: Application) : AndroidViewModel(applicati
         val online: Boolean,
         val refreshingRates: Boolean,
         val chat: AiChatState,
+        val delegate: VivaDelegateState,
         val msg: String?
     )
 
@@ -116,9 +130,10 @@ class WeldMentorViewModel(application: Application) : AndroidViewModel(applicati
         repository.isOnlineFlow,
         _isRefreshingRates,
         _aiChat,
+        _vivaDelegate,
         _statusMessage
-    ) { online, refreshing, chat, msg ->
-        UiExtras(online, refreshing, chat, msg)
+    ) { online, refreshing, chat, delegate, msg ->
+        UiExtras(online, refreshing, chat, delegate, msg)
     }
 
     val uiState: StateFlow<WeldUiState> = combine(
@@ -129,6 +144,7 @@ class WeldMentorViewModel(application: Application) : AndroidViewModel(applicati
         val filtered = applyLogFilter(core.jobs, filter)
         val metrics = computeMetrics(core.jobs, core.attempts, core.prefs)
         val checkMap = core.checklists.associate { it.itemId to it.isChecked }
+        val passedFromDb = core.attempts.filter { it.isCorrect }.map { it.questionId }.toSet()
         WeldUiState(
             preferences = core.prefs,
             jobs = core.jobs,
@@ -140,6 +156,9 @@ class WeldMentorViewModel(application: Application) : AndroidViewModel(applicati
             isOnline = extras.online,
             isRefreshingRates = extras.refreshingRates,
             aiChat = extras.chat,
+            vivaDelegate = extras.delegate.copy(
+                completedQuestionIds = extras.delegate.completedQuestionIds + passedFromDb
+            ),
             statusMessage = extras.msg
         )
     }.stateIn(
@@ -401,6 +420,67 @@ class WeldMentorViewModel(application: Application) : AndroidViewModel(applicati
             } else {
                 if (lang == AppLanguage.BN) "কাস্টম রেট সংরক্ষিত হয়েছে।" else "Custom rate saved."
             }
+        }
+    }
+
+    fun submitDelegateAnswer(question: QuizQuestion, userAnswer: String) {
+        if (_vivaDelegate.value.isEvaluating) return
+        _vivaDelegate.update {
+            it.copy(
+                isEvaluating = true,
+                lastPassed = null,
+                lastFeedback = null,
+                autoRecorded = false
+            )
+        }
+        viewModelScope.launch {
+            val eval = repository.evaluateDelegateAnswer(question, userAnswer)
+            var recordedNow = false
+            if (eval.passed) {
+                repository.recordQuizAttempt(
+                    questionId = question.id,
+                    topicEn = question.topic.en,
+                    topicBn = question.topic.bn,
+                    isCorrect = true
+                )
+                recordedNow = true
+            }
+            _vivaDelegate.update {
+                it.copy(
+                    isEvaluating = false,
+                    lastPassed = eval.passed,
+                    lastFeedback = eval.feedback,
+                    evaluatedByAi = eval.evaluatedByAi,
+                    autoRecorded = recordedNow,
+                    completedQuestionIds = if (eval.passed) {
+                        it.completedQuestionIds + question.id
+                    } else {
+                        it.completedQuestionIds
+                    }
+                )
+            }
+        }
+    }
+
+    fun nextDelegateQuestion(totalQuestions: Int) {
+        val safeTotal = totalQuestions.coerceAtLeast(1)
+        _vivaDelegate.update {
+            it.copy(
+                currentIndex = (it.currentIndex + 1) % safeTotal,
+                lastPassed = null,
+                lastFeedback = null,
+                autoRecorded = false
+            )
+        }
+    }
+
+    fun resetDelegateFeedback() {
+        _vivaDelegate.update {
+            it.copy(
+                lastPassed = null,
+                lastFeedback = null,
+                autoRecorded = false
+            )
         }
     }
 }

@@ -2,11 +2,81 @@ package com.example.data.content
 
 import com.example.data.model.FlashCard
 import com.example.data.model.QuizQuestion
+import com.example.i18n.AppLanguage
 import com.example.i18n.BiText
+
+data class VivaEvalResult(
+    val passed: Boolean,
+    val feedback: String,
+    val evaluatedByAi: Boolean
+)
 
 object VivaKnowledgeBase {
 
     val quizQuestions: List<QuizQuestion> = listOf(
+        QuizQuestion(
+            id = "q_what_is_welding",
+            topic = BiText("Welding Theory", "ওয়েল্ডিং থিওরি"),
+            question = BiText(
+                "What is welding and how does arc fusion join two metals?",
+                "ওয়েল্ডিং কী এবং কীভাবে দুটি ধাতুকে স্থায়ীভাবে জোড়া লাগানো হয়?"
+            ),
+            options = listOf(
+                BiText(
+                    "Permanent joining of metals by melting/fusing them with heat (and optional filler/pressure)",
+                    "তাপ ও প্রয়োজনে চাপ/ফিলার দিয়ে ধাতু গলিয়ে (ফিউশন) স্থায়ীভাবে জোড়া দেওয়ার প্রক্রিয়া"
+                ),
+                BiText("Temporary gluing with epoxy resin", "আঠা দিয়ে অস্থায়ী জোড়া"),
+                BiText("Bolting two plates with nuts", "নাট-বোল্ট দিয়ে আটকানো"),
+                BiText("Painting carbon steel to stop rust", "মরিচা ঠেকাতে রং করা")
+            ),
+            correctIndex = 0,
+            explanation = BiText(
+                "Welding permanently joins metals by heating base edges to melting/fusion temperature, adding filler metal and shielding (flux or gas) against oxidation.",
+                "ওয়েল্ডিং হলো বেস মেটাল গলিয়ে ও ফিলার মেটাল মিশিয়ে ফ্লাক্স বা শিল্ডিং গ্যাসের সাহায্যে দুটি ধাতুকে স্থায়ীভাবে একীভূত করার প্রক্রিয়া।"
+            )
+        ),
+        QuizQuestion(
+            id = "q_welding_types",
+            topic = BiText("Welding Theory", "ওয়েল্ডিং থিওরি"),
+            question = BiText(
+                "What are the four main industrial arc welding processes used in pipe & structural fabrication?",
+                "পাইপ ও স্ট্রাকচারাল ফ্যাব্রিকেশনে ব্যবহৃত চারটি প্রধান আর্ক ওয়েল্ডিং প্রসেস কী কী?"
+            ),
+            options = listOf(
+                BiText(
+                    "SMAW (Stick), GTAW (TIG), GMAW (MIG/MAG), and FCAW",
+                    "SMAW (আর্ক/স্টিক), GTAW (TIG), GMAW (MIG/MAG) এবং FCAW"
+                ),
+                BiText("Soldering and Brazing only", "শুধুমাত্র সোল্ডারিং ও ব্রেজিং"),
+                BiText("Lathe turning and Milling", "লেদ ও মিলিং"),
+                BiText("Sandblasting and Painting", "স্যান্ডব্লাস্টিং ও পেইন্টিং")
+            ),
+            correctIndex = 0,
+            explanation = BiText(
+                "The 4 core processes tested for industrial & overseas jobs are SMAW (Shielded Metal Arc), GTAW (TIG), GMAW (MIG/MAG), and FCAW (Flux-Cored Arc).",
+                "শিল্প ও বিদেশি চাকরির ট্রেড টেস্টে প্রধান ৪টি প্রসেস হলো SMAW (স্টিক), GTAW (TIG), GMAW (MIG/MAG) এবং FCAW।"
+            )
+        ),
+        QuizQuestion(
+            id = "q_tig_polarity_gas",
+            topic = BiText("Welding Theory", "ওয়েল্ডিং থিওরি"),
+            question = BiText(
+                "What polarity and shielding gas are standard for GTAW (TIG) welding of Carbon Steel & Stainless Steel?",
+                "কার্বন ও স্টেইনলেস স্টিলে GTAW (TIG) ওয়েল্ডিংয়ে কোন পোলারিটি ও শিল্ডিং গ্যাস ব্যবহার হয়?"
+            ),
+            options = listOf(
+                BiText("DCEN (Straight Polarity, -) with 100% Argon", "DCEN (মাইনাস পোলারিটি) ও ১০০% আর্গন গ্যাস"),
+                BiText("AC with 100% Oxygen", "AC ও ১০০% অক্সিজেন"),
+                BiText("DCEP with CO2 gas", "DCEP ও CO2 গ্যাস"),
+                BiText("No gas needed in TIG", "TIG-তে কোনো গ্যাস লাগে না")
+            ),
+            correctIndex = 0,
+            explanation = BiText(
+                "DCEN (-) concentrates ~2/3 heat into the steel workpiece while protecting the tungsten tip, shielded by 100% pure Argon (10–15 L/min).",
+                "DCEN (-)-এ কাজের ধাতুতে বেশি তাপ যায় এবং ১০০% আর্গন গ্যাস (১০–১৫ লি/মি) ওয়েল্ড ও টাংস্টেনকে সুরক্ষা দেয়।"
+            )
+        ),
         QuizQuestion(
             id = "q_e7018_meaning",
             topic = BiText("Electrode Codes", "ইলেকট্রোড কোড"),
@@ -503,4 +573,89 @@ object VivaKnowledgeBase {
             )
         )
     )
+
+    private val stopWords = setOf(
+        "the", "and", "for", "with", "that", "this", "from", "into", "only", "are", "used",
+        "use", "not", "all", "very", "per", "your", "when", "what", "which", "how", "can",
+        "ও", "এবং", "জন্য", "দিয়ে", "হয়", "করা", "থাকে", "এর", "একটি", "কোন", "কী"
+    )
+
+    fun evaluateOfflineDelegateAnswer(
+        question: QuizQuestion,
+        userAnswer: String,
+        language: AppLanguage
+    ): VivaEvalResult {
+        val cleanInput = userAnswer.trim()
+        if (cleanInput.length < 3) {
+            val msg = if (language == AppLanguage.BN) {
+                "দয়া করে আপনার উত্তর একটু বিস্তারিত বলুন বা লিখুন। সঠিক উত্তর: ${question.options[question.correctIndex].bn}"
+            } else {
+                "Please speak or type a fuller technical answer. Reference: ${question.options[question.correctIndex].en}"
+            }
+            return VivaEvalResult(passed = false, feedback = msg, evaluatedByAi = false)
+        }
+
+        val normalizedInput = cleanInput.lowercase()
+        val correctOpt = question.options[question.correctIndex]
+        val referenceTokens = (correctOpt.en + " " + correctOpt.bn + " " + question.explanation.en)
+            .lowercase()
+            .split(Regex("[\\s,/()•\\-]+"))
+            .map { it.trim('.', ':', ';', '\'', '"', '%', '°') }
+            .filter { it.length >= 2 && it !in stopWords }
+            .distinct()
+
+        val matchedCount = referenceTokens.count { token -> normalizedInput.contains(token) }
+
+        val strongCodeTokens = listOf(
+            "70,000", "70000", "tensile", "টেনসাইল",
+            "e7016", "7016",
+            "e6013", "6013",
+            "er316l", "316l",
+            "er70s-6", "er70s6", "silicon", "manganese", "সিলিকন",
+            "45", "৪৫", "all position", "সব পজিশন",
+            "uphill", "vertical up", "নিচ থেকে উপরে",
+            "short arc", "ছোট", "টাইট",
+            "butt", "বাট",
+            "short", "stubby", "শর্ট", "স্টাবি",
+            "gas lens", "laminar", "ল্যামিনার",
+            "blue", "wl20", "lanthanated", "নীল",
+            "65", "95", "৬৫", "৯৫",
+            "moisture", "hydrogen", "আর্দ্রতা", "হাইড্রোজেন",
+            "vernier", "caliper", "ভার্নিয়ার", "ক্যালিপার",
+            "angle locator", "angle gauge", "অ্যাঙ্গেল",
+            "10", "12", "১০", "১২", "shade", "শেড",
+            "fire", "flash", "explosion", "আগুন", "বিস্ফোর",
+            "sugar", "oxidation", "সুগারিং", "অক্সিডেশন",
+            "high amp", "long arc", "fast", "বেশি অ্যাম্পিয়ার", "লম্বা আর্ক",
+            "fusion", "melting", "গলিয়ে", "ফিউশন", "স্থায়ী",
+            "smaw", "gtaw", "tig", "fcaw", "mig", "gmaw",
+            "dcen", "argon", "আর্গন"
+        )
+        val hasStrongMatch = strongCodeTokens.any { code ->
+            normalizedInput.contains(code) &&
+                (correctOpt.en.lowercase().contains(code) ||
+                    correctOpt.bn.lowercase().contains(code) ||
+                    question.explanation.en.lowercase().contains(code) ||
+                    question.explanation.bn.lowercase().contains(code))
+        }
+
+        val matchRatio = if (referenceTokens.isEmpty()) 0f else matchedCount.toFloat() / referenceTokens.size.toFloat()
+        val passed = hasStrongMatch || matchedCount >= 2 || matchRatio >= 0.22f
+
+        val feedback = if (passed) {
+            if (language == AppLanguage.BN) {
+                "সঠিক হয়েছে! আপনার উত্তর মূল পয়েন্টের সাথে মিলেছে। ${question.explanation.bn}"
+            } else {
+                "Good answer — passed! ${question.explanation.en}"
+            }
+        } else {
+            if (language == AppLanguage.BN) {
+                "আংশিক বা ভিন্ন উত্তর হয়েছে। কাঙ্ক্ষিত উত্তর: ${correctOpt.bn}। ব্যাখ্যা: ${question.explanation.bn}"
+            } else {
+                "Needs review. Expected answer: ${correctOpt.en}. Key note: ${question.explanation.en}"
+            }
+        }
+
+        return VivaEvalResult(passed = passed, feedback = feedback, evaluatedByAi = false)
+    }
 }

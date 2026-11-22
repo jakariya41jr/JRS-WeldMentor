@@ -3,7 +3,7 @@ package com.example.i18n
 object AppStrings {
     val appName = "JRS WeldMentor"
     val devName = "Md Jakariya Hasan"
-    val devWebsite = "jakariya41jr.xyz"
+    val devWebsite = "Jakariya41jr.xyz"
     val devWebsiteUrl = "https://jakariya41jr.xyz"
 
     // Navigation Tabs
@@ -14,7 +14,7 @@ object AppStrings {
     val navMentor = BiText("AI Mentor", "AI মেন্টর")
 
     // Top Header
-    val builtBy = BiText("Developed by Md Jakariya Hasan | jakariya41jr.xyz", "ডেভেলপার: মোঃ জাকারিয়া হাসান | jakariya41jr.xyz")
+    val builtBy = BiText("Developed by Md Jakariya Hasan | Jakariya41jr.xyz", "ডেভেলপার: মোঃ জাকারিয়া হাসান | Jakariya41jr.xyz")
     val offlineReady = BiText("Offline Ready", "অফলাইন প্রস্তুত")
     val onlineReady = BiText("Online", "অনলাইন")
 
@@ -103,6 +103,7 @@ object AppStrings {
     val reviewMore = BiText("Review Again", "আবার দেখুন")
 
     // Guides
+    val tabTheory = BiText("Theory & Topics", "থিওরি ও টপিক")
     val tabTips = BiText("Hands-On", "হাতে-কলমে")
     val tabDefects = BiText("Defect Fixer", "ত্রুটি সমাধান")
     val tabParams = BiText("Param Ref", "প্যারামিটার")
@@ -151,7 +152,7 @@ object AppStrings {
     val shareReport = BiText("Share", "শেয়ার")
     val printReport = BiText("Print / PDF", "প্রিন্ট / PDF")
     val copiedFeedback = BiText("Copied to clipboard", "ক্লিপবোর্ডে কপি হয়েছে")
-    val visitWebsite = BiText("Visit jakariya41jr.xyz", "jakariya41jr.xyz ভিজিট করুন")
+    val visitWebsite = BiText("Visit Jakariya41jr.xyz", "Jakariya41jr.xyz ভিজিট করুন")
 
     // Currency Converter & Salary Estimator
     val navCurrency = BiText("Currency", "মুদ্রা")
@@ -189,4 +190,36 @@ object AppStrings {
     val salaryAllowancePay = BiText("Allowances", "ভাতা")
     val salaryTotalForeign = BiText("Total in Foreign Currency", "মোট বৈদেশিক মুদ্রায়")
     val salaryTotalBdt = BiText("Total Monthly Equivalent (BDT)", "মোট মাসিক সমতুল্য (বাংলাদেশি টাকা)")
+
+    // Voice Input, TTS & Delegate Viva Mode
+    val vivaDelegateTab = BiText("Delegate Viva", "ডেলিগেট ভাইভা")
+    val voiceSpeakBtn = BiText("Speak", "বলুন")
+    val voiceListening = BiText("Listening...", "শুনছি...")
+    val voiceSpeakAnswer = BiText("Speak Answer", "মুখে উত্তর দিন")
+    val voiceTapListen = BiText("Listen", "শুনুন")
+    val voiceStopSpeaking = BiText("Stop", "থামান")
+    val voiceAutoSpeak = BiText("Auto-Speak", "অটো ভয়েস")
+    val voiceMicPermNeeded = BiText(
+        "Microphone permission is required for voice input.",
+        "ভয়েস ইনপুটের জন্য মাইক্রোফোন অনুমতি প্রয়োজন।"
+    )
+    val voiceUnavailable = BiText(
+        "Speech recognition service is not available on this device.",
+        "এই ডিভাইসে ভয়েস রিকগনিশন সেবা পাওয়া যায়নি।"
+    )
+    val delegateModeTitle = BiText("Trade Test Delegate Interview", "ট্রেড টেস্ট ডেলিগেট ইন্টারভিউ")
+    val delegateModeSubtitle = BiText(
+        "Answer by voice or text — passed answers auto-save to Viva Readiness",
+        "কণ্ঠে বা লিখে উত্তর দিন — পাস করলে ভাইভা প্রোগ্রেস স্বয়ংক্রিয়ভাবে সেভ হবে"
+    )
+    val delegateAnswerHint = BiText(
+        "Speak or type your viva answer here...",
+        "আপনার ভাইভা উত্তর বলুন বা এখানে লিখুন..."
+    )
+    val delegateSubmitBtn = BiText("Evaluate Answer", "উত্তর যাচাই করুন")
+    val delegateEvaluating = BiText("Examiner reviewing...", "পরীক্ষক যাচাই করছেন...")
+    val delegatePassedBadge = BiText("PASSED • Auto-Saved to Progress", "পাস • প্রোগ্রেসে সংরক্ষিত")
+    val delegateReviewBadge = BiText("NEEDS REVIEW • Try Again or Next", "পুনরায় দেখুন • আবার চেষ্টা করুন")
+    val delegateOfflineBadge = BiText("Offline Interview Mode", "অফলাইন ইন্টারভিউ")
+    val delegateAiBadge = BiText("Gemini AI Examiner", "Gemini AI পরীক্ষক")
 }

@@ -2,6 +2,8 @@ package com.example.data.repository
 
 import android.content.Context
 import com.example.data.backup.BackupManager
+import com.example.data.content.VivaEvalResult
+import com.example.data.content.VivaKnowledgeBase
 import com.example.data.local.ChecklistProgressEntity
 import com.example.data.local.DailyTaskEntity
 import com.example.data.local.PreferencesManager
@@ -10,6 +12,7 @@ import com.example.data.local.UserPreferences
 import com.example.data.local.WeldDatabase
 import com.example.data.local.WeldJobEntity
 import com.example.data.model.ChatMessage
+import com.example.data.model.QuizQuestion
 import com.example.data.remote.ExchangeRateService
 import com.example.data.remote.GeminiRestClient
 import com.example.data.remote.NetworkMonitor
@@ -222,5 +225,32 @@ class WeldRepository(context: Context) {
 
     suspend fun setCustomExchangeRate(fromCode: String, toCode: String, rate: Double?) {
         prefsManager.setCustomPairRate("${fromCode.uppercase()}_${toCode.uppercase()}", rate)
+    }
+
+    suspend fun evaluateDelegateAnswer(
+        question: QuizQuestion,
+        userAnswer: String
+    ): VivaEvalResult {
+        val prefs = prefsManager.getSnapshot()
+        val lang = prefs.language
+        if (prefs.geminiApiKey.isNotBlank() && networkMonitor.isOnlineNow()) {
+            val aiResult = geminiClient.evaluateVivaDelegateAnswer(
+                apiKey = prefs.geminiApiKey,
+                modelName = prefs.geminiModel,
+                language = lang,
+                questionText = question.question.get(lang),
+                expectedAnswer = question.options[question.correctIndex].get(lang),
+                officialExplanation = question.explanation.get(lang),
+                userAnswer = userAnswer
+            )
+            if (aiResult.isSuccess) {
+                return aiResult.getOrThrow()
+            }
+        }
+        return VivaKnowledgeBase.evaluateOfflineDelegateAnswer(
+            question = question,
+            userAnswer = userAnswer,
+            language = lang
+        )
     }
 }

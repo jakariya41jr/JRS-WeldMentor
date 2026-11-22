@@ -8,6 +8,101 @@ import com.example.i18n.BiText
 
 object WorkshopGuidesData {
 
+    val theoryTopics: List<HandsOnTip> = listOf(
+        HandsOnTip(
+            id = "theory_what_is_welding",
+            title = BiText("What is Welding & Electric Arc Fusion?", "ওয়েল্ডিং কী ও ইলেকট্রিক আর্ক কীভাবে কাজ করে?"),
+            category = BiText("Welding Theory Basics", "ওয়েল্ডিং থিওরি"),
+            summary = BiText(
+                "Welding permanently joins two metals by melting their edges into a unified molten pool (fusion), often with filler metal and gas/flux shielding.",
+                "ওয়েল্ডিং হলো তাপ বা চাপের সাহায্যে দুটি ধাতুকে গলিয়ে (ফিউশন) ফিলার মেটাল ও গ্যাস/ফ্লাক্স শিল্ডিংসহ স্থায়ীভাবে জোড়া দেওয়ার প্রক্রিয়া।"
+            ),
+            steps = listOf(
+                BiText(
+                    "• Fusion & Heat Source: An electric arc reaches ~3,500°C–6,000°C between electrode/tungsten and workpiece, melting base metal + filler rod together.",
+                    "• ফিউশন ও তাপ: ইলেকট্রোড ও কাজের ধাতুর মধ্যে বৈদ্যুতিক আর্ক প্রায় ৩,৫০০°–৬,০০০° সেলসিয়াস তাপ উৎপন্ন করে ধাতু গলায়।"
+                ),
+                BiText(
+                    "• Shielding (Flux or Gas): Molten steel reacts with air (O2/N2) causing porosity and brittleness; flux (SMAW/FCAW) or Argon/CO2 (TIG/MIG) protects the puddle.",
+                    "• শিল্ডিং: গলিত লোহা বাতাসের অক্সিজেন/নাইট্রোজেনের সংস্পর্শে এলে ছিদ্র (পোরোসিটি) হয়, তাই ফ্লাক্স বা আর্গন/CO2 গ্যাস দিয়ে রক্ষা করা হয়।"
+                ),
+                BiText(
+                    "• Polarity Basics: DCEP (+) puts ~2/3 heat on the electrode/rod (deep penetration for E7018/LB52/MIG/FCAW). DCEN (-) puts heat on the work (standard for TIG CS/SS).",
+                    "• পোলারিটি: DCEP (+)-এ E7018/LB52/MIG/FCAW চলে (গভীর পেনিট্রেশন); আর DCEN (-)-এ TIG (CS ও SS) চলে।"
+                )
+            )
+        ),
+        HandsOnTip(
+            id = "theory_processes",
+            title = BiText("Main Industrial Welding Processes", "প্রধান ওয়েল্ডিং প্রসেসসমূহ (SMAW, GTAW, FCAW, MIG)"),
+            category = BiText("Processes & Uses", "প্রসেস পরিচিতি"),
+            summary = BiText(
+                "Trade tests and overseas fabrication yards test four core arc welding processes.",
+                "ট্রেড টেস্ট ও বিদেশি প্রকল্পগুলোতে সাধারণত চারটি প্রধান আর্ক ওয়েল্ডিং প্রসেসে পরীক্ষা হয়।"
+            ),
+            steps = listOf(
+                BiText(
+                    "• SMAW (Stick / Arc): Flux-coated rod (E6013, E7018, LB-52). Versatile outdoors, pipeline fill/cap, structural steel.",
+                    "• SMAW (আর্ক/রড): ফ্লাক্সযুক্ত ইলেকট্রোড (E6013, E7018, LB-52)। খোলা জায়গা ও স্ট্রাকচারাল/পাইপ ফিল-ক্যাপে সেরা।"
+                ),
+                BiText(
+                    "• GTAW (TIG): Non-consumable tungsten + 100% Argon + hand-fed filler (ER70S-6, 316L). Cleanest X-ray root passes in 6G pipe.",
+                    "• GTAW (TIG): টাংস্টেন ইলেকট্রোড, ১০০% আর্গন ও আলাদা ফিলার রড। পাইপের নিখুঁত এক্স-রে রুট পাসের জন্য ব্যবহার হয়।"
+                ),
+                BiText(
+                    "• FCAW & GMAW (MIG/MAG): Continuous spool wire feed with CO2 or Ar/CO2 gas; high deposition rate in shipyards & heavy steel.",
+                    "• FCAW ও MIG/MAG: কয়েল থেকে অটোমেটিক তার আসে; শিপইয়ার্ড ও হেভি স্টিলে দ্রুত উৎপাদনের জন্য ব্যবহৃত হয়।"
+                )
+            )
+        ),
+        HandsOnTip(
+            id = "theory_positions_joints",
+            title = BiText("Welding Positions (1G–6G+) & Joint Types", "ওয়েল্ডিং পজিশন (1G–6G+) ও জয়েন্ট টাইপ"),
+            category = BiText("ASME / AWS Standards", "পজিশন ও জয়েন্ট"),
+            summary = BiText(
+                "G = Groove (Butt) weld; F = Fillet (Tee/Lap/Corner) weld. Higher numbers indicate harder gravity angles.",
+                "G = গ্রুভ (বাট) ওয়েল্ড; F = ফিলেট (টি/ল্যাপ/কর্নার) ওয়েল্ড। সংখ্যা বাড়ার সাথে কাজের জটিলতা বাড়ে।"
+            ),
+            steps = listOf(
+                BiText(
+                    "• Plate Groove & Fillet: 1G/1F Flat, 2G/2F Horizontal, 3G/3F Vertical (Up/Down), 4G/4F Overhead.",
+                    "• প্লেট পজিশন: 1G ফ্ল্যাট, 2G হরাইজন্টাল, 3G ভার্টিক্যাল (আপ/ডাউন), 4G ওভারহেড (মাথার উপর)।"
+                ),
+                BiText(
+                    "• Pipe Qualifications: 5G = Pipe fixed horizontally (requires overhead, vertical & flat in one pass). 6G = Pipe fixed at 45° incline (qualifies ALL positions).",
+                    "• পাইপ পজিশন: 5G = পাইপ আনুভূমিক স্থির; 6G = পাইপ ৪৫° কোণে স্থির (6G পাস করলে সব পজিশনের যোগ্যতা মেলে)।"
+                ),
+                BiText(
+                    "• 6G+ & 5 Basic Joints: 6G+ adds a restriction ring/wall on 6\" or 12\" pipe. Basic joints: Butt, Lap, Tee, Corner, and Edge.",
+                    "• 6G+ ও ৫টি জয়েন্ট: 6G+-এ রেস্ট্রিকশনসহ ৬\" বা ১২\" পাইপে টেস্ট হয়। ৫টি জয়েন্ট: বাট, ল্যাপ, টি, কর্নার ও এজ।"
+                )
+            )
+        ),
+        HandsOnTip(
+            id = "theory_rods_safety",
+            title = BiText("Electrodes, Filler Rods & Trade Test Safety", "ইলেকট্রোড, ফিলার রড ও ট্রেড টেস্ট নিরাপত্তা"),
+            category = BiText("Consumables & HSE", "রড ও সেফটি"),
+            summary = BiText(
+                "Know your AWS codes, current formula, and mandatory PPE for any delegate viva interview.",
+                "যেকোনো ডেলিগেট ভাইভায় AWS রড কোড, অ্যাম্পিয়ার হিসাব ও PPE নিয়ম মুখস্থ থাকা জরুরি।"
+            ),
+            steps = listOf(
+                BiText(
+                    "• Rod Quick Rule-of-Thumb: Amperage ≈ 30–40A per 1mm rod diameter (e.g., 2.5mm E7018 ≈ 65–95A; 3.2mm ≈ 95–130A; drop ~10% for Vertical/Overhead).",
+                    "• অ্যাম্পিয়ার হিসাব: প্রতি ১ মিমি রডে প্রায় ৩০–৪০ অ্যাম্পস (যেমন ২.৫ মিমি E7018 ≈ ৬৫–৯৫A, ৩.২ মিমি ≈ ৯৫–১৩০A)।"
+                ),
+                BiText(
+                    "• CS vs SS Fillers: Carbon Steel uses E6013, E7018, LB-52 (E7016), ER70S-6. Stainless Steel uses ER308L / ER316L with mandatory Argon back-purge inside pipe.",
+                    "• CS বনাম SS: কার্বন স্টিলে E6013, E7018, LB-52, ER70S-6; আর স্টেইনলেস স্টিলে ER316L/308L এবং পাইপের ভেতর আর্গন ব্যাক-পার্জ লাগে।"
+                ),
+                BiText(
+                    "• Mandatory PPE: Auto-darkening / Shade 10–12 helmet, leather welding gloves, FR apron/jacket, safety boots, grinding face shield/goggles & earplugs.",
+                    "• আবশ্যিক PPE: শেড ১০–১২ হেলমেট, চামড়ার গ্লাভস, এ্প্রোন/জ্যাকেট, সেফটি বুট, গ্রাইন্ডিং গগলস ও ইয়ার প্লাগ।"
+                )
+            )
+        )
+    )
+
     val handsOnTips: List<HandsOnTip> = listOf(
         HandsOnTip(
             id = "tip_tremor",

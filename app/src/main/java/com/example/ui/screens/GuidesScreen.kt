@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.Handyman
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
@@ -73,6 +74,7 @@ fun GuidesScreen(
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val tabs = listOf(
+                    4 to AppStrings.tabTheory.get(lang),
                     0 to AppStrings.tabTips.get(lang),
                     1 to AppStrings.tabDefects.get(lang),
                     2 to AppStrings.tabParams.get(lang),
@@ -94,6 +96,27 @@ fun GuidesScreen(
         }
 
         when (selectedSubTab) {
+            4 -> {
+                items(WorkshopGuidesData.theoryTopics, key = { it.id }) { topic ->
+                    GlassCard(modifier = Modifier.fillMaxWidth(), accentGlow = PassEmerald, contentPadding = 16.dp) {
+                        ArcStatusPill(text = topic.category.get(lang), color = PassEmerald, icon = Icons.Filled.MenuBook)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(topic.title.get(lang), style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(topic.summary.get(lang), style = MaterialTheme.typography.bodySmall, color = MoltenAmber)
+                        Spacer(modifier = Modifier.height(10.dp))
+                        topic.steps.forEach { step ->
+                            Text(
+                                text = step.get(lang),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextSecondary,
+                                modifier = Modifier.padding(vertical = 3.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
             0 -> {
                 items(WorkshopGuidesData.handsOnTips, key = { it.id }) { tip ->
                     GlassCard(modifier = Modifier.fillMaxWidth(), accentGlow = ArcCyan, contentPadding = 16.dp) {

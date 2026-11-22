@@ -23,7 +23,11 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -46,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.audio.rememberVoiceAssistantController
 import com.example.i18n.AppLanguage
 import com.example.i18n.AppStrings
 import com.example.i18n.BiText
@@ -83,10 +88,18 @@ fun AiMentorScreen(
     val chatState = uiState.aiChat
     var input by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
+    val voice = rememberVoiceAssistantController(lang)
+    var autoSpeakAi by remember { mutableStateOf(true) }
+    var lastSpokenMessageId by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(chatState.messages.size) {
         if (chatState.messages.isNotEmpty()) {
             listState.animateScrollToItem(chatState.messages.size - 1)
+            val latest = chatState.messages.last()
+            if (autoSpeakAi && !latest.isUser && latest.id != lastSpokenMessageId) {
+                lastSpokenMessageId = latest.id
+                voice.speak(latest.text)
+            }
         }
     }
 
@@ -119,8 +132,24 @@ fun AiMentorScreen(
                         )
                     }
                 }
+                IconButton(
+                    onClick = {
+                        autoSpeakAi = !autoSpeakAi
+                        if (!autoSpeakAi) voice.stopSpeaking()
+                    },
+                    modifier = Modifier.testTag("ai_auto_speak_toggle_btn")
+                ) {
+                    Icon(
+                        imageVector = if (autoSpeakAi) Icons.Filled.VolumeUp else Icons.Filled.VolumeOff,
+                        contentDescription = AppStrings.voiceAutoSpeak.get(lang),
+                        tint = if (autoSpeakAi) PassEmerald else TextSecondary
+                    )
+                }
                 if (chatState.messages.isNotEmpty()) {
-                    IconButton(onClick = onClearChat, modifier = Modifier.testTag("clear_ai_chat_btn")) {
+                    IconButton(onClick = {
+                        voice.stopSpeaking()
+                        onClearChat()
+                    }, modifier = Modifier.testTag("clear_ai_chat_btn")) {
                         Icon(Icons.Filled.DeleteSweep, contentDescription = AppStrings.clearChat.get(lang), tint = TextSecondary)
                     }
                 }
@@ -231,12 +260,47 @@ fun AiMentorScreen(
                             ),
                             modifier = Modifier.fillMaxWidth(0.88f)
                         ) {
-                            Text(
-                                text = msg.text,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = TextPrimary,
-                                modifier = Modifier.padding(12.dp)
-                            )
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = msg.text,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextPrimary
+                                )
+                                if (!msg.isUser) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.End
+                                    ) {
+                                        Surface(
+                                            onClick = {
+                                                if (voice.isSpeaking) voice.stopSpeaking() else voice.speak(msg.text)
+                                            },
+                                            shape = RoundedCornerShape(50),
+                                            color = ArcCyan.copy(alpha = 0.14f),
+                                            modifier = Modifier.testTag("ai_speak_msg_${msg.id}")
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(
+                                                    imageVector = if (voice.isSpeaking) Icons.Filled.Stop else Icons.Filled.VolumeUp,
+                                                    contentDescription = AppStrings.voiceTapListen.get(lang),
+                                                    tint = ArcCyan,
+                                                    modifier = Modifier.size(14.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(
+                                                    text = if (voice.isSpeaking) AppStrings.voiceStopSpeaking.get(lang) else AppStrings.voiceTapListen.get(lang),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = ArcCyan
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -285,17 +349,56 @@ fun AiMentorScreen(
                 }
             }
 
-            // Input Row
+            voice.voiceError?.let { vErr ->
+                Text(
+                    text = vErr,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = WarnRose,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+            }
+
+            // Input Row with Voice STT Mic Button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Surface(
+                    onClick = {
+                        if (voice.isListening) {
+                            voice.stopListening()
+                        } else {
+                            voice.startListening { spoken ->
+                                input = if (input.isBlank()) spoken else "$input $spoken"
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .size(50.dp)
+                        .testTag("ai_voice_mic_btn"),
+                    shape = RoundedCornerShape(14.dp),
+                    color = if (voice.isListening) WarnRose else SlateSurfaceElevated,
+                    border = BorderStroke(1.dp, if (voice.isListening) WarnRose else ArcCyan.copy(alpha = 0.45f))
+                ) {
+                    Icon(
+                        imageVector = if (voice.isListening) Icons.Filled.Stop else Icons.Filled.Mic,
+                        contentDescription = if (voice.isListening) AppStrings.voiceListening.get(lang) else AppStrings.voiceSpeakBtn.get(lang),
+                        tint = if (voice.isListening) Color.White else ArcCyan,
+                        modifier = Modifier.padding(13.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
                 OutlinedTextField(
                     value = input,
                     onValueChange = { input = it },
-                    placeholder = { Text(AppStrings.aiInputHint.get(lang), color = TextMuted) },
+                    placeholder = {
+                        Text(
+                            text = if (voice.isListening) AppStrings.voiceListening.get(lang) else AppStrings.aiInputHint.get(lang),
+                            color = if (voice.isListening) ArcCyan else TextMuted
+                        )
+                    },
                     modifier = Modifier
                         .weight(1f)
                         .testTag("ai_chat_input"),

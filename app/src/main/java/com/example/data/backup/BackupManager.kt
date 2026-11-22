@@ -31,7 +31,7 @@ object BackupManager {
     ): String {
         val root = JSONObject().apply {
             put("app", "JRS WeldMentor")
-            put("developer", "Md Jakariya Hasan (jakariya41jr.xyz)")
+            put("developer", "Md Jakariya Hasan (Jakariya41jr.xyz)")
             put("schemaVersion", 1)
             put("exportedAt", System.currentTimeMillis())
 
