@@ -42,6 +42,8 @@ object AppStrings {
     val stancePlannerDesc = BiText("4G & 6G+ posture & mirror", "4G ও 6G+ ভঙ্গি ও মিরর সেটআপ")
     val tradeTestTitle = BiText("Trade Test & Overseas", "ট্রেড টেস্ট ও বিদেশ যাত্রা")
     val tradeTestDesc = BiText("Coupon, PPE & interview check", "কুপন, PPE ও ইন্টারভিউ চেকলিস্ট")
+    val delegateHomeTitle = BiText("Viva Delegator Mode", "ভাইভা ডেলিগেটর মোড")
+    val delegateHomeDesc = BiText("Voice trade test interview & auto-progress", "কণ্ঠে ট্রেড টেস্ট ভাইভা ও অটো প্রোগ্রেস")
 
     // Daily Task Dialog
     val newTaskTitle = BiText("New Daily Task", "নতুন দৈনিক টাস্ক")
@@ -192,7 +194,7 @@ object AppStrings {
     val salaryTotalBdt = BiText("Total Monthly Equivalent (BDT)", "মোট মাসিক সমতুল্য (বাংলাদেশি টাকা)")
 
     // Voice Input, TTS & Delegate Viva Mode
-    val vivaDelegateTab = BiText("Delegate Viva", "ডেলিগেট ভাইভা")
+    val vivaDelegateTab = BiText("Delegator", "ডেলিগেটর")
     val voiceSpeakBtn = BiText("Speak", "বলুন")
     val voiceListening = BiText("Listening...", "শুনছি...")
     val voiceSpeakAnswer = BiText("Speak Answer", "মুখে উত্তর দিন")
@@ -207,7 +209,7 @@ object AppStrings {
         "Speech recognition service is not available on this device.",
         "এই ডিভাইসে ভয়েস রিকগনিশন সেবা পাওয়া যায়নি।"
     )
-    val delegateModeTitle = BiText("Trade Test Delegate Interview", "ট্রেড টেস্ট ডেলিগেট ইন্টারভিউ")
+    val delegateModeTitle = BiText("Viva Delegator / Interview", "ভাইভা ডেলিগেটর মোড")
     val delegateModeSubtitle = BiText(
         "Answer by voice or text — passed answers auto-save to Viva Readiness",
         "কণ্ঠে বা লিখে উত্তর দিন — পাস করলে ভাইভা প্রোগ্রেস স্বয়ংক্রিয়ভাবে সেভ হবে"

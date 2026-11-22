@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -21,6 +23,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Build
@@ -29,7 +32,9 @@ import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Quiz
+import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
@@ -60,6 +65,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -93,12 +99,14 @@ fun HomeScreen(
     onOpenSummaryCard: () -> Unit,
     onOpenPlanners: () -> Unit,
     onOpenCurrency: () -> Unit,
+    onOpenVivaDelegator: () -> Unit,
     onAddPracticeMinutes: (Int) -> Unit,
     onAddTask: (String, String, String) -> Unit,
     onToggleTask: (Long, Boolean) -> Unit,
     onDeleteTask: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val lang = uiState.preferences.language
     val metrics = uiState.metrics
     val prefs = uiState.preferences
@@ -406,6 +414,59 @@ fun HomeScreen(
             )
         }
 
+        // Viva Delegator Voice Interview Spotlight
+        item {
+            GlassCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("home_viva_delegator_card"),
+                accentGlow = VioletSpark,
+                borderColor = VioletSpark.copy(alpha = 0.45f),
+                onClick = onOpenVivaDelegator,
+                contentPadding = 16.dp
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = VioletSpark.copy(alpha = 0.18f),
+                        border = BorderStroke(1.dp, VioletSpark.copy(alpha = 0.45f))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.RecordVoiceOver,
+                            contentDescription = AppStrings.delegateHomeTitle.get(lang),
+                            tint = VioletSpark,
+                            modifier = Modifier
+                                .padding(12.dp)
+                                .size(24.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = AppStrings.delegateHomeTitle.get(lang),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = TextPrimary
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = AppStrings.delegateHomeDesc.get(lang),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        tint = VioletSpark,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+
         // Quick Trade Readiness Tools
         item {
             GlassSectionHeader(
@@ -464,18 +525,50 @@ fun HomeScreen(
             }
         }
 
-        // Footer Developer Credit Card
+        // Footer Brand & Developer Ownership Card
         item {
             GlassCard(
-                modifier = Modifier.fillMaxWidth(),
-                borderColor = GlassBorder,
-                contentPadding = 12.dp
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("home_dev_brand_card"),
+                borderColor = ArcCyan.copy(alpha = 0.35f),
+                onClick = {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(AppStrings.devWebsiteUrl))
+                    context.startActivity(intent)
+                },
+                contentPadding = 14.dp
             ) {
-                Text(
-                    text = "Developed by ${AppStrings.devName} | ${AppStrings.devWebsite}",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = TextSecondary
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_weldmentor_symbol),
+                        contentDescription = AppStrings.appName,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = AppStrings.appName,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "Developed by ${AppStrings.devName}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary
+                        )
+                    }
+                    ArcStatusPill(
+                        text = AppStrings.devWebsite,
+                        color = ArcCyan,
+                        icon = Icons.Filled.OpenInBrowser
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(12.dp))
         }

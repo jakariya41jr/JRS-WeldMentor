@@ -114,6 +114,7 @@ fun WeldMentorAppRoot(viewModel: WeldMentorViewModel = viewModel()) {
 
     var currentTab by remember { mutableStateOf(MainTab.HOME) }
     var guidesSubTab by remember { mutableIntStateOf(0) }
+    var vivaSubMode by remember { mutableIntStateOf(0) }
     var editingJob by remember { mutableStateOf<WeldJobEntity?>(null) }
     var showLogForm by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
@@ -175,10 +176,14 @@ fun WeldMentorAppRoot(viewModel: WeldMentorViewModel = viewModel()) {
                     },
                     bottomBar = {
                         if (!useNavigationRail) {
-                            NavigationBar(
-                                containerColor = SlateSurface.copy(alpha = 0.92f),
-                                tonalElevation = 0.dp
+                            Surface(
+                                color = SlateSurface.copy(alpha = 0.94f),
+                                border = BorderStroke(1.dp, GlassBorder)
                             ) {
+                                NavigationBar(
+                                    containerColor = Color.Transparent,
+                                    tonalElevation = 0.dp
+                                ) {
                                 MainTab.entries.forEach { tab ->
                                     val label = tabLabel(tab, lang)
                                     NavigationBarItem(
@@ -204,6 +209,7 @@ fun WeldMentorAppRoot(viewModel: WeldMentorViewModel = viewModel()) {
                                         )
                                     )
                                 }
+                            }
                             }
                         }
                     }
@@ -232,6 +238,10 @@ fun WeldMentorAppRoot(viewModel: WeldMentorViewModel = viewModel()) {
                                         currentTab = MainTab.GUIDES
                                     },
                                     onOpenCurrency = { currentTab = MainTab.CURRENCY },
+                                    onOpenVivaDelegator = {
+                                        vivaSubMode = 1
+                                        currentTab = MainTab.VIVA
+                                    },
                                     onAddPracticeMinutes = { viewModel.addPracticeMinutes(it) },
                                     onAddTask = { en, bn, cat -> viewModel.addDailyTask(en, bn, cat) },
                                     onToggleTask = { id, done -> viewModel.toggleDailyTask(id, done) },
@@ -254,6 +264,8 @@ fun WeldMentorAppRoot(viewModel: WeldMentorViewModel = viewModel()) {
 
                                 MainTab.VIVA -> VivaQuizScreen(
                                     uiState = uiState,
+                                    selectedSubMode = vivaSubMode,
+                                    onSelectSubMode = { vivaSubMode = it },
                                     onRecordAttempt = { qId, tEn, tBn, correct ->
                                         viewModel.recordQuizAttempt(qId, tEn, tBn, correct)
                                     },

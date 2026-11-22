@@ -1,4 +1,6 @@
 import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
+import java.io.File
+import java.util.Base64
 
 plugins {
   alias(libs.plugins.android.application)
@@ -79,6 +81,57 @@ secrets {
 }
 
 googleServices { missingGoogleServicesStrategy = MissingGoogleServicesStrategy.WARN }
+
+abstract class EnsureDebugKeystoreTask : DefaultTask() {
+  @get:Internal
+  abstract val keystorePath: Property<String>
+
+  @get:Internal
+  abstract val base64Path: Property<String>
+
+  @TaskAction
+  fun ensure() {
+    val keystoreFile = File(keystorePath.get())
+    if (keystoreFile.exists()) return
+
+    val base64File = File(base64Path.get())
+    if (base64File.exists()) {
+      val cleanBase64 = base64File.readText().replace("\\s+".toRegex(), "")
+      if (cleanBase64.isNotEmpty()) {
+        keystoreFile.writeBytes(Base64.getDecoder().decode(cleanBase64))
+        return
+      }
+    }
+
+    val process = ProcessBuilder(
+      "keytool",
+      "-genkeypair",
+      "-keystore", keystoreFile.absolutePath,
+      "-storepass", "android",
+      "-alias", "androiddebugkey",
+      "-keypass", "android",
+      "-keyalg", "RSA",
+      "-keysize", "2048",
+      "-validity", "10000",
+      "-dname", "CN=Android Debug,O=Android,C=US"
+    ).redirectErrorStream(true).start()
+    val exitCode = process.waitFor()
+    if (exitCode != 0) {
+      val output = process.inputStream.bufferedReader().readText()
+      throw GradleException("Failed to generate default debug.keystore (exit $exitCode): $output")
+    }
+  }
+}
+
+val ensureDebugKeystore by tasks.registering(EnsureDebugKeystoreTask::class) {
+  keystorePath.set(rootProject.file("debug.keystore").absolutePath)
+  base64Path.set(rootProject.file("debug.keystore.base64").absolutePath)
+  onlyIf { !File(keystorePath.get()).exists() }
+}
+
+tasks.matching { it.name == "validateSigningDebug" || it.name == "packageDebug" }.configureEach {
+  dependsOn(ensureDebugKeystore)
+}
 
 // Some unused dependencies are commented out below instead of being removed.
 // This makes it easy to add them back in the future if needed.

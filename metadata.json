@@ -2,5 +2,7 @@
   "name": "JRS WeldMentor",
   "description": "Offline-first bilingual (Bangla & English) welding job logbook, viva quiz, defect fixer, trade test readiness tracker, and BYOK Gemini AI mentor by Md Jakariya Hasan.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

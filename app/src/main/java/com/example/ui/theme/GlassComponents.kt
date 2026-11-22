@@ -44,25 +44,50 @@ fun WeldGlassBackground(
             .fillMaxSize()
             .background(DeepSlateBg)
             .drawBehind {
+                // Subtle precision workshop blueprint grid
+                val gridStep = 44.dp.toPx()
+                val gridColor = Color.White.copy(alpha = 0.025f)
+                var x = gridStep
+                while (x < size.width) {
+                    drawLine(
+                        color = gridColor,
+                        start = Offset(x, 0f),
+                        end = Offset(x, size.height),
+                        strokeWidth = 1f
+                    )
+                    x += gridStep
+                }
+                var y = gridStep
+                while (y < size.height) {
+                    drawLine(
+                        color = gridColor,
+                        start = Offset(0f, y),
+                        end = Offset(size.width, y),
+                        strokeWidth = 1f
+                    )
+                    y += gridStep
+                }
+
+                // Ambient welding arc & molten atmosphere glows
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(ArcCyan.copy(alpha = 0.14f), Color.Transparent),
-                        center = Offset(size.width * 0.15f, size.height * 0.08f),
-                        radius = size.maxDimension * 0.55f
+                        colors = listOf(ArcCyan.copy(alpha = 0.16f), Color.Transparent),
+                        center = Offset(size.width * 0.14f, size.height * 0.07f),
+                        radius = size.maxDimension * 0.56f
                     )
                 )
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(MoltenAmber.copy(alpha = 0.10f), Color.Transparent),
-                        center = Offset(size.width * 0.88f, size.height * 0.38f),
+                        colors = listOf(MoltenAmber.copy(alpha = 0.11f), Color.Transparent),
+                        center = Offset(size.width * 0.90f, size.height * 0.36f),
                         radius = size.maxDimension * 0.48f
                     )
                 )
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(PassEmerald.copy(alpha = 0.07f), Color.Transparent),
-                        center = Offset(size.width * 0.2f, size.height * 0.88f),
-                        radius = size.maxDimension * 0.45f
+                        colors = listOf(PassEmerald.copy(alpha = 0.08f), Color.Transparent),
+                        center = Offset(size.width * 0.18f, size.height * 0.90f),
+                        radius = size.maxDimension * 0.44f
                     )
                 )
             },
@@ -81,17 +106,23 @@ fun GlassCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val shape = RoundedCornerShape(cornerRadius)
-    val bgBrush = Brush.linearGradient(
+    val bgBrush = Brush.verticalGradient(
         colors = listOf(
-            (accentGlow ?: ArcCyan).copy(alpha = if (accentGlow != null) 0.12f else 0.05f),
-            SlateSurface.copy(alpha = 0.82f),
-            SlateSurfaceElevated.copy(alpha = 0.68f)
+            (accentGlow ?: ArcCyan).copy(alpha = if (accentGlow != null) 0.14f else 0.07f),
+            SlateSurface.copy(alpha = 0.88f),
+            SlateSurfaceElevated.copy(alpha = 0.72f)
+        )
+    )
+    val rimBrush = Brush.verticalGradient(
+        colors = listOf(
+            if (borderColor == GlassBorder) Color.White.copy(alpha = 0.22f) else borderColor.copy(alpha = 0.72f),
+            borderColor.copy(alpha = 0.28f)
         )
     )
     val baseModifier = modifier
         .clip(shape)
         .background(brush = bgBrush, shape = shape)
-        .border(BorderStroke(1.dp, borderColor), shape)
+        .border(width = 1.dp, brush = rimBrush, shape = shape)
         .then(
             if (onClick != null) {
                 Modifier
@@ -116,8 +147,8 @@ fun ArcStatusPill(
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(50),
-        color = color.copy(alpha = 0.14f),
-        border = BorderStroke(1.dp, color.copy(alpha = 0.42f))
+        color = color.copy(alpha = 0.15f),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.45f))
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
@@ -156,16 +187,16 @@ fun GlassSectionHeader(
     ) {
         if (icon != null) {
             Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = iconTint.copy(alpha = 0.14f),
-                border = BorderStroke(1.dp, iconTint.copy(alpha = 0.35f))
+                shape = RoundedCornerShape(12.dp),
+                color = iconTint.copy(alpha = 0.16f),
+                border = BorderStroke(1.dp, iconTint.copy(alpha = 0.40f))
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
                     tint = iconTint,
                     modifier = Modifier
-                        .padding(7.dp)
+                        .padding(8.dp)
                         .size(18.dp)
                 )
             }

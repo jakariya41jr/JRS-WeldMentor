@@ -61,6 +61,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.data.content.VivaKnowledgeBase
 import com.example.i18n.AppLanguage
@@ -81,6 +82,8 @@ import com.example.ui.viewmodel.WeldUiState
 @Composable
 fun VivaQuizScreen(
     uiState: WeldUiState,
+    selectedSubMode: Int,
+    onSelectSubMode: (Int) -> Unit,
     onRecordAttempt: (String, String, String, Boolean) -> Unit,
     onResetStats: () -> Unit,
     onToggleMasteredCard: (String, Boolean) -> Unit,
@@ -92,7 +95,7 @@ fun VivaQuizScreen(
     val lang = uiState.preferences.language
     val metrics = uiState.metrics
     val voice = rememberVoiceAssistantController(lang)
-    var subMode by remember { mutableIntStateOf(0) } // 0 = Quiz, 1 = Delegate Mode, 2 = Flashcards
+    val subMode = selectedSubMode
     var selectedTopicEn by remember { mutableStateOf("ALL") }
     var currentQuestionIdx by remember { mutableIntStateOf(0) }
     var selectedOption by remember { mutableStateOf<Int?>(null) }
@@ -131,30 +134,30 @@ fun VivaQuizScreen(
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 SegmentedButton(
                     selected = subMode == 0,
-                    onClick = { subMode = 0 },
+                    onClick = { onSelectSubMode(0) },
                     shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3),
                     modifier = Modifier.testTag("tab_viva_quiz"),
                     icon = { Icon(Icons.Filled.Psychology, contentDescription = null, modifier = Modifier.size(15.dp)) }
                 ) {
-                    Text(AppStrings.vivaQuizTab.get(lang), maxLines = 1)
+                    Text(AppStrings.vivaQuizTab.get(lang), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 SegmentedButton(
                     selected = subMode == 1,
-                    onClick = { subMode = 1 },
+                    onClick = { onSelectSubMode(1) },
                     shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3),
                     modifier = Modifier.testTag("tab_viva_delegate"),
                     icon = { Icon(Icons.Filled.RecordVoiceOver, contentDescription = null, modifier = Modifier.size(15.dp)) }
                 ) {
-                    Text(AppStrings.vivaDelegateTab.get(lang), maxLines = 1)
+                    Text(AppStrings.vivaDelegateTab.get(lang), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 SegmentedButton(
                     selected = subMode == 2,
-                    onClick = { subMode = 2 },
+                    onClick = { onSelectSubMode(2) },
                     shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3),
                     modifier = Modifier.testTag("tab_rod_memorizer"),
                     icon = { Icon(Icons.Filled.Style, contentDescription = null, modifier = Modifier.size(15.dp)) }
                 ) {
-                    Text(AppStrings.rodMemorizerTab.get(lang), maxLines = 1)
+                    Text(AppStrings.rodMemorizerTab.get(lang), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
         }
@@ -398,6 +401,11 @@ fun VivaQuizScreen(
             val alreadyCompleted = delegateState.completedQuestionIds.contains(delegateQuestion.id)
 
             item {
+                LaunchedEffect(delegateState.currentIndex, subMode, autoSpeakDelegate) {
+                    if (subMode == 1 && autoSpeakDelegate && delegateState.lastFeedback == null && voice.ttsReady) {
+                        voice.speak(delegateQuestion.question.get(lang))
+                    }
+                }
                 LaunchedEffect(delegateState.lastFeedback) {
                     val fb = delegateState.lastFeedback
                     if (autoSpeakDelegate && !fb.isNullOrBlank()) {
